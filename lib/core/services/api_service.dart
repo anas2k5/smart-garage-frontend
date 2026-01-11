@@ -28,22 +28,43 @@ class ApiService {
   }
 
   // ================= CUSTOMER BOOKINGS =================
- static Future<List<dynamic>> getCustomerBookings() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  static Future<List<dynamic>> getCustomerBookings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-  final response = await http.get(
-    Uri.parse('${ApiConstants.bookings}/me'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-  );
+    final response = await http.get(
+      Uri.parse('${ApiConstants.bookings}/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
-  if (response.statusCode == 200) {
-    return json.decode(response.body);
-  } else {
-    throw Exception('Failed to load bookings');
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load bookings');
+    }
   }
-}
+
+  // ================= CANCEL BOOKING =================
+  static Future<void> cancelBooking(int bookingId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    final response = await http.put(
+      Uri.parse('${ApiConstants.bookings}/$bookingId/status'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'status': 'CANCELLED',
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to cancel booking');
+    }
+  }
 }

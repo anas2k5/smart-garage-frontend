@@ -42,6 +42,40 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
     }
   }
 
+  // ✅ CONFIRMATION DIALOG (VERY IMPORTANT)
+  Future<void> _confirmCancel(
+      BuildContext context, int bookingId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Cancel Booking"),
+        content: const Text(
+          "Are you sure you want to cancel this booking?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("No"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              "Yes, Cancel",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ApiService.cancelBooking(bookingId);
+      setState(() {
+        _loadBookings(); // 🔄 refresh list
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,22 +87,27 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
         child: FutureBuilder<List<Booking>>(
           future: _bookingsFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(
+                  child: CircularProgressIndicator());
             }
 
             if (snapshot.hasError) {
-              return const Center(child: Text("Failed to load bookings"));
+              return const Center(
+                  child: Text("Failed to load bookings"));
             }
 
             final bookings = snapshot.data ?? [];
 
             if (bookings.isEmpty) {
-              return const Center(child: Text("No bookings found"));
+              return const Center(
+                  child: Text("No bookings found"));
             }
 
             return ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics:
+                  const AlwaysScrollableScrollPhysics(),
               itemCount: bookings.length,
               itemBuilder: (context, index) {
                 final booking = bookings[index];
@@ -80,7 +119,8 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            BookingDetailsScreen(booking: booking),
+                            BookingDetailsScreen(
+                                booking: booking),
                       ),
                     );
                   },
@@ -89,12 +129,14 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                         horizontal: 12, vertical: 8),
                     elevation: 3,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                          BorderRadius.circular(12),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Booking #${booking.id}",
@@ -104,28 +146,51 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
+
                           Row(
                             children: [
-                              const Text(
-                                "Status: ",
-                                style:
-                                    TextStyle(fontWeight: FontWeight.w500),
-                              ),
+                              const Text("Status: "),
                               Text(
                                 booking.status,
                                 style: TextStyle(
-                                  color: _statusColor(booking.status),
-                                  fontWeight: FontWeight.bold,
+                                  color: _statusColor(
+                                      booking.status),
+                                  fontWeight:
+                                      FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
+
                           const SizedBox(height: 4),
                           Text(
                             "Cost: ${booking.finalCost ?? 'N/A'}",
-                            style:
-                                const TextStyle(color: Colors.black54),
+                            style: const TextStyle(
+                                color: Colors.black54),
                           ),
+
+                          // 🔥 CANCEL BUTTON (ONLY FOR PENDING)
+                          if (booking.status ==
+                              'PENDING') ...[
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment:
+                                  Alignment.centerRight,
+                              child: TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor:
+                                      Colors.red,
+                                ),
+                                onPressed: () =>
+                                    _confirmCancel(
+                                  context,
+                                  booking.id!,
+                                ),
+                                child: const Text(
+                                    "Cancel Booking"),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
