@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'customer_bookings_screen.dart';
+import 'create_booking/select_garage_screen.dart';
+ // ✅ ADD THIS
 import '../../core/utils/auth_utils.dart';
 
 class CustomerDashboard extends StatelessWidget {
@@ -20,16 +22,38 @@ class CustomerDashboard extends StatelessWidget {
         ],
       ),
       body: Center(
-        child: ElevatedButton(
-          child: const Text('My Bookings'),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CustomerBookingsScreen(),
-              ),
-            );
-          },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 🔹 My Bookings
+            ElevatedButton(
+              child: const Text('My Bookings'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CustomerBookingsScreen(),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            // 🔹 Book Service
+            ElevatedButton.icon(
+              icon: const Icon(Icons.car_repair),
+              label: const Text("Book Service"),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>  SelectGarageScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

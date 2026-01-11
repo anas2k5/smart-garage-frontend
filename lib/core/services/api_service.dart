@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/api_constants.dart';
 import '../../models/login_response.dart';
+import '../../models/garage.dart'; // ✅ REQUIRED for getGarages()
 
 class ApiService {
   // ================= LOGIN =================
@@ -67,4 +68,34 @@ class ApiService {
       throw Exception('Failed to cancel booking');
     }
   }
+
+  // ================= FETCH GARAGES =================
+  static Future<List<Garage>> getGarages() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final url = ApiConstants.garages;
+  print("➡️ GARAGES URL => $url");
+  print("🔑 TOKEN => $token");
+
+  final response = await http.get(
+    Uri.parse(url),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  print("⬅️ STATUS CODE => ${response.statusCode}");
+  print("⬅️ RAW BODY => ${response.body}");
+
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+    return data.map((e) => Garage.fromJson(e)).toList();
+  } else {
+    throw Exception('Failed to load garages');
+  }
+}
+
+
 }
