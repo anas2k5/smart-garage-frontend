@@ -1,64 +1,47 @@
 class Booking {
   final int id;
+  final String status;
+  final String serviceType;
+  final String bookingTime;
 
-  final int garageId;
   final String garageName;
-
-  final int customerId;
-  final String customerEmail;
-
-  final int vehicleId;
   final String vehiclePlate;
 
-  final String serviceType;
-  final String status;
-  final String details;
-  final DateTime bookingTime;
-
-  final int? mechanicId;
   final String? mechanicName;
   final String? mechanicPhone;
 
   final double? estimatedCost;
   final double? finalCost;
 
+  final String? details;
+
   Booking({
     required this.id,
-    required this.garageId,
-    required this.garageName,
-    required this.customerId,
-    required this.customerEmail,
-    required this.vehicleId,
-    required this.vehiclePlate,
-    required this.serviceType,
     required this.status,
-    required this.details,
+    required this.serviceType,
     required this.bookingTime,
-    this.mechanicId,
+    required this.garageName,
+    required this.vehiclePlate,
     this.mechanicName,
     this.mechanicPhone,
     this.estimatedCost,
     this.finalCost,
+    this.details,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
       id: json['id'],
-      garageId: json['garageId'],
-      garageName: json['garageName'],
-      customerId: json['customerId'],
-      customerEmail: json['customerEmail'],
-      vehicleId: json['vehicleId'],
-      vehiclePlate: json['vehiclePlate'],
-      serviceType: json['serviceType'],
       status: json['status'],
-      details: json['details'] ?? '',
-      bookingTime: DateTime.parse(json['bookingTime']),
-      mechanicId: json['mechanicId'],
+      serviceType: json['serviceType'],
+      bookingTime: json['bookingTime'],
+      garageName: json['garageName'],
+      vehiclePlate: json['vehiclePlate'],
       mechanicName: json['mechanicName'],
       mechanicPhone: json['mechanicPhone'],
       estimatedCost: json['estimatedCost']?.toDouble(),
       finalCost: json['finalCost']?.toDouble(),
+      details: json['details'],
     );
   }
 }
