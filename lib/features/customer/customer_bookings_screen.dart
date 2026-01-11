@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/services/api_service.dart';
+import '../../models/booking.dart';
+import 'booking_details_screen.dart';
 
 class CustomerBookingsScreen extends StatefulWidget {
   const CustomerBookingsScreen({super.key});
@@ -10,7 +12,7 @@ class CustomerBookingsScreen extends StatefulWidget {
 }
 
 class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
-  late Future<List<dynamic>> _bookingsFuture;
+  late Future<List<Booking>> _bookingsFuture;
 
   @override
   void initState() {
@@ -19,19 +21,24 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
   }
 
   void _loadBookings() {
-    _bookingsFuture = ApiService.getCustomerBookings();
+    _bookingsFuture = ApiService.getCustomerBookings()
+        .then((list) => list.map((e) => Booking.fromJson(e)).toList());
   }
 
   Color _statusColor(String status) {
     switch (status) {
       case 'PENDING':
         return Colors.orange;
+      case 'ACCEPTED':
+        return Colors.grey;
       case 'IN_PROGRESS':
         return Colors.blue;
       case 'COMPLETED':
         return Colors.green;
+      case 'CANCELLED':
+        return Colors.red;
       default:
-        return Colors.grey;
+        return Colors.black54;
     }
   }
 
@@ -41,11 +48,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
       appBar: AppBar(title: const Text("My Bookings")),
       body: RefreshIndicator(
         onRefresh: () async {
-          setState(() {
-            _loadBookings();
-          });
+          setState(_loadBookings);
         },
-        child: FutureBuilder<List<dynamic>>(
+        child: FutureBuilder<List<Booking>>(
           future: _bookingsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -56,7 +61,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
               return const Center(child: Text("Failed to load bookings"));
             }
 
-            final bookings = snapshot.data!;
+            final bookings = snapshot.data ?? [];
 
             if (bookings.isEmpty) {
               return const Center(child: Text("No bookings found"));
@@ -67,49 +72,62 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
               itemCount: bookings.length,
               itemBuilder: (context, index) {
                 final booking = bookings[index];
-                final status = booking['status'];
 
-                return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Booking #${booking['id']}",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                return InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            BookingDetailsScreen(booking: booking),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Booking #${booking.id}",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Text(
-                              "Status: ",
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              status,
-                              style: TextStyle(
-                                color: _statusColor(status),
-                                fontWeight: FontWeight.bold,
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Text(
+                                "Status: ",
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w500),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Cost: ${booking['finalCost'] ?? 'N/A'}",
-                          style: const TextStyle(color: Colors.black54),
-                        ),
-                      ],
+                              Text(
+                                booking.status,
+                                style: TextStyle(
+                                  color: _statusColor(booking.status),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Cost: ${booking.finalCost ?? 'N/A'}",
+                            style:
+                                const TextStyle(color: Colors.black54),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
