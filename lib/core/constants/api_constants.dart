@@ -8,5 +8,7 @@ class ApiConstants {
   static const String bookings = '$baseUrl/bookings';
   // 🏢 GARAGES
 static const String garages = '$baseUrl/garages';
+static const String vehicles = '$baseUrl/vehicles';
+
 
 }

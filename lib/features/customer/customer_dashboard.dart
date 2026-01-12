@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'customer_bookings_screen.dart';
-import 'create_booking/select_garage_screen.dart';
+//import 'create_booking/select_garage_screen.dart';
  // ✅ ADD THIS
 import '../../core/utils/auth_utils.dart';
+import 'create_booking/select_vehicle_screen.dart';
+
 
 class CustomerDashboard extends StatelessWidget {
   const CustomerDashboard({super.key});
@@ -41,18 +43,20 @@ class CustomerDashboard extends StatelessWidget {
             const SizedBox(height: 20),
 
             // 🔹 Book Service
-            ElevatedButton.icon(
-              icon: const Icon(Icons.car_repair),
-              label: const Text("Book Service"),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>  SelectGarageScreen(),
-                  ),
-                );
-              },
-            ),
+           // 🔹 Book Service
+ElevatedButton.icon(
+  icon: const Icon(Icons.car_repair),
+  label: const Text("Book Service"),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SelectVehicleScreen(),
+      ),
+    );
+  },
+),
+
           ],
         ),
       ),
