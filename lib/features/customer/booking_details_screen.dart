@@ -84,8 +84,12 @@ class BookingDetailsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            _infoRow("Service Type", booking.serviceType),
-            _infoRow("Booking Time", booking.bookingTime),
+            _infoRow("Service Type", booking.serviceType ?? "N/A"),
+_infoRow(
+  "Booking Time",
+  booking.bookingTime.toLocal().toString(),
+),
+
 
             const Divider(height: 32),
 

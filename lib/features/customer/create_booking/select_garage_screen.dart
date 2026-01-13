@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/api_service.dart';
 import '../../../models/garage.dart';
 import '../../../models/vehicle.dart';
+import 'select_service_screen.dart';
 
 class SelectGarageScreen extends StatefulWidget {
   final Vehicle selectedVehicle;
@@ -27,9 +28,7 @@ class _SelectGarageScreenState extends State<SelectGarageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Garage'),
-      ),
+      appBar: AppBar(title: const Text('Select Garage')),
       body: FutureBuilder<List<Garage>>(
         future: _future,
         builder: (context, snapshot) {
@@ -54,21 +53,20 @@ class _SelectGarageScreenState extends State<SelectGarageScreen> {
 
               return Card(
                 margin: const EdgeInsets.all(12),
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
                 child: ListTile(
-                  title: Text(
-                    g.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  title: Text(g.name),
                   subtitle: Text(g.address),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
-                    // NEXT STEP (later):
-                    // Navigate to SelectServiceScreen
-                    // passing widget.selectedVehicle + g
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SelectServiceScreen(
+                          garage: g,
+                          vehicle: widget.selectedVehicle,
+                        ),
+                      ),
+                    );
                   },
                 ),
               );

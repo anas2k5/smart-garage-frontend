@@ -17,12 +17,13 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadBookings();
+    _bookingsFuture = ApiService.getCustomerBookings();
   }
 
-  void _loadBookings() {
-    _bookingsFuture = ApiService.getCustomerBookings()
-        .then((list) => list.map((e) => Booking.fromJson(e)).toList());
+  void _reload() {
+    setState(() {
+      _bookingsFuture = ApiService.getCustomerBookings();
+    });
   }
 
   Color _statusColor(String status) {
@@ -42,16 +43,14 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
     }
   }
 
-  // ✅ CONFIRMATION DIALOG
-  Future<void> _confirmCancel(
-      BuildContext context, int bookingId) async {
+  // ✅ CANCEL CONFIRMATION
+  Future<void> _confirmCancel(BuildContext context, int bookingId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Cancel Booking"),
-        content: const Text(
-          "Are you sure you want to cancel this booking?",
-        ),
+        content:
+            const Text("Are you sure you want to cancel this booking?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -70,9 +69,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
 
     if (confirmed == true) {
       await ApiService.cancelBooking(bookingId);
-      setState(() {
-        _loadBookings(); // 🔄 refresh list
-      });
+      _reload();
     }
   }
 
@@ -81,9 +78,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("My Bookings")),
       body: RefreshIndicator(
-        onRefresh: () async {
-          setState(_loadBookings);
-        },
+        onRefresh: () async => _reload(),
         child: FutureBuilder<List<Booking>>(
           future: _bookingsFuture,
           builder: (context, snapshot) {
@@ -92,7 +87,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
             }
 
             if (snapshot.hasError) {
-              return const Center(child: Text("Failed to load bookings"));
+              return const Center(
+                child: Text("Failed to load bookings"),
+              );
             }
 
             final bookings = snapshot.data ?? [];
@@ -137,41 +134,54 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 8),
 
+                          const SizedBox(height: 6),
+                          Text(
+                            booking.garageName,
+                            style: const TextStyle(
+                                color: Colors.black54),
+                          ),
+
+                          const SizedBox(height: 6),
+                          Text(
+                            "Service: ${booking.serviceType ?? 'Not assigned'}",
+                            style: const TextStyle(
+                                color: Colors.black87),
+                          ),
+
+                          const SizedBox(height: 6),
                           Row(
                             children: [
                               const Text("Status: "),
                               Text(
                                 booking.status,
                                 style: TextStyle(
-                                  color: _statusColor(booking.status),
+                                  color:
+                                      _statusColor(booking.status),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
 
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Text(
-                            "Cost: ${booking.finalCost ?? 'N/A'}",
+                            "Final Cost: ${booking.finalCost != null ? "₹ ${booking.finalCost}" : "N/A"}",
                             style:
                                 const TextStyle(color: Colors.black54),
                           ),
 
-                          // 🔥 CANCEL BUTTON (ONLY FOR PENDING)
+                          // 🔥 CANCEL BUTTON
                           if (booking.status == 'PENDING') ...[
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
                                 style: TextButton.styleFrom(
                                   foregroundColor: Colors.red,
                                 ),
-                                onPressed: () => _confirmCancel(
-                                  context,
-                                  booking.id!,
-                                ),
+                                onPressed: () =>
+                                    _confirmCancel(context, booking.id),
                                 child:
                                     const Text("Cancel Booking"),
                               ),
