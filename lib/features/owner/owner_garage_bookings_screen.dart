@@ -3,6 +3,7 @@ import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
 import '../../models/garage.dart';
 import '../../models/mechanic.dart';
+import 'add_mechanic_screen.dart'; // ✅ NEW IMPORT
 
 class OwnerGarageBookingsScreen extends StatefulWidget {
   final Garage garage;
@@ -96,9 +97,33 @@ class _OwnerGarageBookingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ UPDATED APP BAR (ADD MECHANIC)
       appBar: AppBar(
         title: Text(widget.garage.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add),
+            tooltip: "Add Mechanic",
+            onPressed: () async {
+              final added = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddMechanicScreen(
+                    garage: widget.garage,
+                  ),
+                ),
+              );
+
+              if (added == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Mechanic added")),
+                );
+              }
+            },
+          ),
+        ],
       ),
+
       body: RefreshIndicator(
         onRefresh: () async => setState(_loadBookings),
         child: FutureBuilder<List<Booking>>(

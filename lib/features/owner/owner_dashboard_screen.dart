@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_garage_app/features/auth/login_screen.dart';
 import 'owner_garages_screen.dart';
+import 'add_garage_screen.dart'; // ✅ NEW
 
 class OwnerDashboardScreen extends StatelessWidget {
   const OwnerDashboardScreen({super.key});
@@ -48,6 +49,22 @@ class OwnerDashboardScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const OwnerGaragesScreen(),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // ✅ ADD GARAGE BUTTON
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add_business),
+              label: const Text("Add Garage"),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddGarageScreen(),
                   ),
                 );
               },
