@@ -292,6 +292,32 @@ static Future<void> assignMechanic({
     throw Exception('Failed to assign mechanic');
   }
 }
+static Future<void> addGarageService({
+  required int garageId,
+  required String name,
+  required String description,
+  required double price,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.post(
+    Uri.parse('${ApiConstants.baseUrl}/garages/$garageId/services'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "name": name,
+      "description": description,
+      "price": price,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to add service");
+  }
+}
 
 
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_garage_app/core/services/api_service.dart';
 import 'package:smart_garage_app/models/garage.dart';
-import 'owner_garage_bookings_screen.dart'; // ✅ ADD THIS
+import 'owner_garage_actions_screen.dart';
 
 class OwnerGaragesScreen extends StatefulWidget {
   const OwnerGaragesScreen({super.key});
@@ -56,7 +56,7 @@ class _OwnerGaragesScreenState extends State<OwnerGaragesScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            OwnerGarageBookingsScreen(garage: g),
+                            OwnerGarageActionsScreen(garage: g),
                       ),
                     );
                   },
