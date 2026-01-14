@@ -3,7 +3,7 @@ import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
 import '../../models/garage.dart';
 import '../../models/mechanic.dart';
-import 'add_mechanic_screen.dart'; // ✅ NEW IMPORT
+import 'add_mechanic_screen.dart';
 
 class OwnerGarageBookingsScreen extends StatefulWidget {
   final Garage garage;
@@ -97,7 +97,6 @@ class _OwnerGarageBookingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ UPDATED APP BAR (ADD MECHANIC)
       appBar: AppBar(
         title: Text(widget.garage.name),
         actions: [
@@ -123,7 +122,6 @@ class _OwnerGarageBookingsScreenState
           ),
         ],
       ),
-
       body: RefreshIndicator(
         onRefresh: () async => setState(_loadBookings),
         child: FutureBuilder<List<Booking>>(
@@ -177,6 +175,7 @@ class _OwnerGarageBookingsScreenState
                         Text("Customer: ${b.customerEmail ?? 'N/A'}"),
                         Text("Service: ${b.serviceType ?? 'Not assigned'}"),
                         const SizedBox(height: 6),
+
                         Row(
                           children: [
                             const Text("Status: "),
@@ -190,7 +189,7 @@ class _OwnerGarageBookingsScreenState
                           ],
                         ),
 
-                        // 🔥 ACTIONS FOR PENDING
+                        // 🔥 PENDING → ACCEPT / REJECT
                         if (b.status == 'PENDING') ...[
                           const SizedBox(height: 12),
                           Row(
@@ -214,7 +213,7 @@ class _OwnerGarageBookingsScreenState
                           ),
                         ],
 
-                        // 🔧 ASSIGN MECHANIC (ONLY AFTER ACCEPTED)
+                        // 🔧 ACCEPTED → ASSIGN MECHANIC
                         if (b.status == 'ACCEPTED' &&
                             b.mechanicName == null) ...[
                           const SizedBox(height: 8),
@@ -228,7 +227,37 @@ class _OwnerGarageBookingsScreenState
                           ),
                         ],
 
-                        // 👨‍🔧 SHOW ASSIGNED MECHANIC
+                        // ▶ ACCEPTED → START WORK
+                        if (b.status == 'ACCEPTED' &&
+                            b.mechanicName != null) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _updateStatus(b.id, 'IN_PROGRESS'),
+                              child: const Text("Start Work"),
+                            ),
+                          ),
+                        ],
+
+                        // ✅ IN_PROGRESS → COMPLETE
+                        if (b.status == 'IN_PROGRESS') ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                              ),
+                              onPressed: () =>
+                                  _updateStatus(b.id, 'COMPLETED'),
+                              child: const Text("Mark Completed"),
+                            ),
+                          ),
+                        ],
+
+                        // 👨‍🔧 MECHANIC INFO
                         if (b.mechanicName != null) ...[
                           const SizedBox(height: 6),
                           Text(
