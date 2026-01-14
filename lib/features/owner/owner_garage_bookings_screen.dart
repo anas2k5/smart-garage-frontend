@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
 import '../../models/garage.dart';
+import '../../models/mechanic.dart';
 
 class OwnerGarageBookingsScreen extends StatefulWidget {
   final Garage garage;
@@ -54,6 +55,42 @@ class _OwnerGarageBookingsScreenState
       status: status,
     );
     setState(_loadBookings);
+  }
+
+  // ================= ASSIGN MECHANIC =================
+  void _openAssignMechanicSheet(Booking booking) async {
+    final List<Mechanic> mechanics =
+        await ApiService.getMechanicsByGarage(widget.garage.id);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        if (mechanics.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text("No mechanics available"),
+          );
+        }
+
+        return ListView(
+          children: mechanics.map((m) {
+            return ListTile(
+              title: Text(m.name),
+              subtitle: Text(m.phone),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                await ApiService.assignMechanic(
+                  bookingId: booking.id,
+                  mechanicId: m.id,
+                );
+                Navigator.pop(context);
+                setState(_loadBookings);
+              },
+            );
+          }).toList(),
+        );
+      },
+    );
   }
 
   @override
@@ -149,6 +186,31 @@ class _OwnerGarageBookingsScreenState
                                 child: const Text("Accept"),
                               ),
                             ],
+                          ),
+                        ],
+
+                        // 🔧 ASSIGN MECHANIC (ONLY AFTER ACCEPTED)
+                        if (b.status == 'ACCEPTED' &&
+                            b.mechanicName == null) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _openAssignMechanicSheet(b),
+                              child: const Text("Assign Mechanic"),
+                            ),
+                          ),
+                        ],
+
+                        // 👨‍🔧 SHOW ASSIGNED MECHANIC
+                        if (b.mechanicName != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            "Mechanic: ${b.mechanicName} (${b.mechanicPhone})",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ],

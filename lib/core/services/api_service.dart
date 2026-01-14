@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/booking.dart';
+import '../../models/mechanic.dart';
 
 import '../constants/api_constants.dart';
 import '../../models/login_response.dart';
@@ -245,6 +246,50 @@ static Future<void> updateBookingStatus({
 
   if (response.statusCode != 200) {
     throw Exception("Failed to update booking status");
+  }
+}
+static Future<List<Mechanic>> getMechanicsByGarage(int garageId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/mechanics/garage/$garageId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  print("🔧 MECHANICS STATUS => ${response.statusCode}");
+  print("🔧 MECHANICS BODY => ${response.body}");
+
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+    return data.map((e) => Mechanic.fromJson(e)).toList();
+  } else {
+    throw Exception('Failed to load mechanics');
+  }
+}
+
+static Future<void> assignMechanic({
+  required int bookingId,
+  required int mechanicId,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.put(
+    Uri.parse(
+      '${ApiConstants.bookings}/$bookingId/assign?mechanicId=$mechanicId',
+    ),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to assign mechanic');
   }
 }
 
