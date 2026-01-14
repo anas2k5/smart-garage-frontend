@@ -87,7 +87,8 @@ class BookingDetailsScreen extends StatelessWidget {
             _infoRow("Service Type", booking.serviceType ?? "N/A"),
 _infoRow(
   "Booking Time",
-  booking.bookingTime.toLocal().toString(),
+booking.bookingTime
+
 ),
 
 

@@ -182,4 +182,71 @@ static Future<List<Booking>> getCustomerBookings() async {
       throw Exception("Failed to create booking");
     }
   }
+  //owner owned garages
+  static Future<List<Garage>> getOwnerGarages() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.garages}/me'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+    return data.map((e) => Garage.fromJson(e)).toList();
+  } else {
+    throw Exception('Failed to load owner garages');
+  }
+}
+// ================= OWNER: FETCH BOOKINGS BY GARAGE =================
+static Future<List<dynamic>> getBookingsByGarage(int garageId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.bookings}/garage/$garageId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  print("🏭 GARAGE BOOKINGS STATUS => ${response.statusCode}");
+  print("🏭 GARAGE BOOKINGS BODY => ${response.body}");
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception("Failed to load garage bookings");
+  }
+}
+// ================= OWNER: UPDATE BOOKING STATUS =================
+static Future<void> updateBookingStatus({
+  required int bookingId,
+  required String status,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.bookings}/$bookingId/status'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "status": status,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to update booking status");
+  }
+}
+
+
 }

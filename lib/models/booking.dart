@@ -2,10 +2,12 @@ class Booking {
   final int id;
   final String status;
   final String? serviceType;
-  final DateTime bookingTime;
+  final String bookingTime;
 
   final String garageName;
   final String vehiclePlate;
+
+  final String? customerEmail;
 
   final String? mechanicName;
   final String? mechanicPhone;
@@ -22,6 +24,7 @@ class Booking {
     required this.bookingTime,
     required this.garageName,
     required this.vehiclePlate,
+    this.customerEmail,
     this.mechanicName,
     this.mechanicPhone,
     this.estimatedCost,
@@ -33,18 +36,15 @@ class Booking {
     return Booking(
       id: json['id'],
       status: json['status'],
-      serviceType: json['serviceType'], // ✅ can be null
-      bookingTime: DateTime.parse(json['bookingTime']), // ✅ FIX
+      serviceType: json['serviceType'],
+      bookingTime: json['bookingTime'],
       garageName: json['garageName'],
       vehiclePlate: json['vehiclePlate'],
+      customerEmail: json['customerEmail'],
       mechanicName: json['mechanicName'],
       mechanicPhone: json['mechanicPhone'],
-      estimatedCost: json['estimatedCost'] != null
-          ? (json['estimatedCost'] as num).toDouble()
-          : null,
-      finalCost: json['finalCost'] != null
-          ? (json['finalCost'] as num).toDouble()
-          : null,
+      estimatedCost: json['estimatedCost']?.toDouble(),
+      finalCost: json['finalCost']?.toDouble(),
       details: json['details'],
     );
   }

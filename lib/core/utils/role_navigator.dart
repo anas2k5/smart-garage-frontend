@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../features/admin/admin_dashboard.dart';
 import '../../features/customer/customer_dashboard.dart';
-import '../../features/owner/owner_dashboard.dart';
+import '../../features/owner/owner_dashboard_screen.dart';
+
 
 class RoleNavigator {
   static Widget getHomeByRole(String role) {
@@ -9,7 +10,8 @@ class RoleNavigator {
       case 'ADMIN':
         return const AdminDashboard();
       case 'OWNER':
-        return const OwnerDashboard();
+       return const OwnerDashboardScreen();
+
       case 'CUSTOMER':
         return const CustomerDashboard();
       default:
