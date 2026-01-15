@@ -318,6 +318,53 @@ static Future<void> addGarageService({
     throw Exception("Failed to add service");
   }
 }
+// ================= OWNER: UPDATE GARAGE SERVICE =================
+static Future<void> updateGarageService({
+  required int serviceId,
+  required String name,
+  required String description,
+  required double price,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/garages/services/$serviceId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "name": name,
+      "description": description,
+      "price": price,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to update service");
+  }
+}
+
+// ================= OWNER: DEACTIVATE GARAGE SERVICE =================
+static Future<void> deactivateGarageService(int serviceId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.put(
+    Uri.parse(
+      '${ApiConstants.baseUrl}/garages/services/$serviceId/deactivate',
+    ),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to deactivate service");
+  }
+}
 
 
 }

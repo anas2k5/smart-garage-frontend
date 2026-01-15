@@ -20,29 +20,41 @@ class _OwnerManageServicesScreenState
   @override
   void initState() {
     super.initState();
+    _load();
+  }
+
+  void _load() {
     _future = ApiService.getGarageServices(widget.garage.id);
   }
 
   void _reload() {
-    setState(() {
-      _future = ApiService.getGarageServices(widget.garage.id);
-    });
+    setState(_load);
   }
 
-  void _openAddServiceDialog() {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final priceCtrl = TextEditingController();
+  // ================= ADD / EDIT SERVICE DIALOG =================
+  void _openServiceDialog({GarageService? service}) {
+    final nameCtrl =
+        TextEditingController(text: service?.name ?? '');
+    final descCtrl =
+        TextEditingController(text: service?.description ?? '');
+    final priceCtrl =
+        TextEditingController(text: service?.price.toString() ?? '');
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Add Service"),
+        title: Text(service == null ? "Add Service" : "Edit Service"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Name")),
-            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: "Description")),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+            TextField(
+              controller: descCtrl,
+              decoration: const InputDecoration(labelText: "Description"),
+            ),
             TextField(
               controller: priceCtrl,
               keyboardType: TextInputType.number,
@@ -51,19 +63,61 @@ class _OwnerManageServicesScreenState
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () async {
-              await ApiService.addGarageService(
-                garageId: widget.garage.id,
-                name: nameCtrl.text,
-                description: descCtrl.text,
-                price: double.parse(priceCtrl.text),
-              );
+              if (service == null) {
+                await ApiService.addGarageService(
+                  garageId: widget.garage.id,
+                  name: nameCtrl.text,
+                  description: descCtrl.text,
+                  price: double.parse(priceCtrl.text),
+                );
+              } else {
+                await ApiService.updateGarageService(
+                  serviceId: service.id,
+                  name: nameCtrl.text,
+                  description: descCtrl.text,
+                  price: double.parse(priceCtrl.text),
+                );
+              }
               Navigator.pop(context);
               _reload();
             },
-            child: const Text("Add"),
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= CONFIRM DEACTIVATE =================
+  void _confirmDeactivate(GarageService service) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Deactivate Service"),
+        content: Text(
+          "Are you sure you want to deactivate '${service.name}'?\n\nCustomers will no longer see this service.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () async {
+              await ApiService.deactivateGarageService(service.id);
+              Navigator.pop(context);
+              _reload();
+            },
+            child: const Text("Deactivate"),
           ),
         ],
       ),
@@ -75,7 +129,7 @@ class _OwnerManageServicesScreenState
     return Scaffold(
       appBar: AppBar(title: const Text("Manage Services")),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openAddServiceDialog,
+        onPressed: () => _openServiceDialog(),
         child: const Icon(Icons.add),
       ),
       body: FutureBuilder<List<GarageService>>(
@@ -99,9 +153,28 @@ class _OwnerManageServicesScreenState
             itemCount: services.length,
             itemBuilder: (_, i) {
               final s = services[i];
-              return ListTile(
-                title: Text(s.name),
-                subtitle: Text("₹${s.price}"),
+
+              return Card(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: ListTile(
+                  title: Text(s.name),
+                  subtitle: Text("₹${s.price}"),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () =>
+                            _openServiceDialog(service: s),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.block, color: Colors.red),
+                        onPressed: () => _confirmDeactivate(s),
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           );
