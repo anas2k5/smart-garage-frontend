@@ -94,6 +94,74 @@ class _OwnerGarageBookingsScreenState
     );
   }
 
+  // ================= ESTIMATED COST =================
+  void _openEstimatedCostDialog(Booking booking) {
+    final ctrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Set Estimated Cost"),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: "Estimated Cost"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await ApiService.updateEstimatedCost(
+                bookingId: booking.id,
+                estimatedCost: double.parse(ctrl.text),
+              );
+              Navigator.pop(context);
+              setState(_loadBookings);
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= FINAL COST =================
+  void _openFinalCostDialog(Booking booking) {
+    final ctrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Set Final Cost"),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: "Final Cost"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await ApiService.updateFinalCost(
+                bookingId: booking.id,
+                finalCost: double.parse(ctrl.text),
+              );
+              Navigator.pop(context);
+              setState(_loadBookings);
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -132,17 +200,13 @@ class _OwnerGarageBookingsScreenState
             }
 
             if (snapshot.hasError) {
-              return const Center(
-                child: Text("Failed to load bookings"),
-              );
+              return const Center(child: Text("Failed to load bookings"));
             }
 
             final bookings = snapshot.data ?? [];
 
             if (bookings.isEmpty) {
-              return const Center(
-                child: Text("No bookings found"),
-              );
+              return const Center(child: Text("No bookings found"));
             }
 
             return ListView.builder(
@@ -189,7 +253,17 @@ class _OwnerGarageBookingsScreenState
                           ],
                         ),
 
-                        // 🔥 PENDING → ACCEPT / REJECT
+                        if (b.estimatedCost != null)
+                          Text("Estimated Cost: ₹${b.estimatedCost}"),
+
+                        if (b.finalCost != null)
+                          Text(
+                            "Final Cost: ₹${b.finalCost}",
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+
+                        // 🔥 PENDING
                         if (b.status == 'PENDING') ...[
                           const SizedBox(height: 12),
                           Row(
@@ -213,7 +287,7 @@ class _OwnerGarageBookingsScreenState
                           ),
                         ],
 
-                        // 🔧 ACCEPTED → ASSIGN MECHANIC
+                        // 🔧 ASSIGN MECHANIC
                         if (b.status == 'ACCEPTED' &&
                             b.mechanicName == null) ...[
                           const SizedBox(height: 8),
@@ -227,9 +301,24 @@ class _OwnerGarageBookingsScreenState
                           ),
                         ],
 
-                        // ▶ ACCEPTED → START WORK
+                        // 💰 ADD ESTIMATED COST
                         if (b.status == 'ACCEPTED' &&
-                            b.mechanicName != null) ...[
+                            b.mechanicName != null &&
+                            b.estimatedCost == null) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _openEstimatedCostDialog(b),
+                              child: const Text("Add Estimated Cost"),
+                            ),
+                          ),
+                        ],
+
+                        // ▶ START WORK
+                        if (b.status == 'ACCEPTED' &&
+                            b.estimatedCost != null) ...[
                           const SizedBox(height: 8),
                           Align(
                             alignment: Alignment.centerRight,
@@ -241,8 +330,23 @@ class _OwnerGarageBookingsScreenState
                           ),
                         ],
 
-                        // ✅ IN_PROGRESS → COMPLETE
-                        if (b.status == 'IN_PROGRESS') ...[
+                        // 🧾 ADD FINAL COST
+                        if (b.status == 'IN_PROGRESS' &&
+                            b.finalCost == null) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _openFinalCostDialog(b),
+                              child: const Text("Add Final Cost"),
+                            ),
+                          ),
+                        ],
+
+                        // ✅ COMPLETE
+                        if (b.status == 'IN_PROGRESS' &&
+                            b.finalCost != null) ...[
                           const SizedBox(height: 8),
                           Align(
                             alignment: Alignment.centerRight,

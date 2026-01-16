@@ -3,6 +3,9 @@ import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
 import 'booking_details_screen.dart';
 
+// ✅ STEP 2 — IMPORT PAYMENT SCREEN
+import '../payments/payment_screen.dart';
+
 class CustomerBookingsScreen extends StatefulWidget {
   const CustomerBookingsScreen({super.key});
 
@@ -170,6 +173,34 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                             style:
                                 const TextStyle(color: Colors.black54),
                           ),
+
+                          // 💳 PAY NOW BUTTON
+                          if (booking.status == 'COMPLETED' &&
+                              booking.finalCost != null) ...[
+                            const SizedBox(height: 10),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.payment),
+                                label: const Text("Pay Now"),
+                                onPressed: () async {
+                                  final paid = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                    builder: (_) => PaymentScreen(
+  booking: booking,
+),
+
+                                    ),
+                                  );
+
+                                  if (paid == true) {
+                                    _reload();
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
 
                           // 🔥 CANCEL BUTTON
                           if (booking.status == 'PENDING') ...[

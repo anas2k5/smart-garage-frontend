@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/booking.dart';
+import '../payments/payment_screen.dart';
 
 class BookingDetailsScreen extends StatelessWidget {
   final Booking booking;
@@ -58,6 +59,12 @@ class BookingDetailsScreen extends StatelessWidget {
     );
   }
 
+  bool _shouldShowPayButton() {
+    return booking.finalCost != null &&
+        booking.status != 'COMPLETED' &&
+        booking.status != 'CANCELLED';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,12 +92,7 @@ class BookingDetailsScreen extends StatelessWidget {
               ],
             ),
             _infoRow("Service Type", booking.serviceType ?? "N/A"),
-_infoRow(
-  "Booking Time",
-booking.bookingTime
-
-),
-
+            _infoRow("Booking Time", booking.bookingTime),
 
             const Divider(height: 32),
 
@@ -120,13 +122,13 @@ booking.bookingTime
             _infoRow(
               "Estimated Cost",
               booking.estimatedCost != null
-                  ? booking.estimatedCost.toString()
+                  ? "₹ ${booking.estimatedCost}"
                   : "N/A",
             ),
             _infoRow(
               "Final Cost",
               booking.finalCost != null
-                  ? booking.finalCost.toString()
+                  ? "₹ ${booking.finalCost}"
                   : "N/A",
             ),
 
@@ -138,6 +140,33 @@ booking.bookingTime
               Text(
                 booking.details!,
                 style: const TextStyle(color: Colors.black87),
+              ),
+              const Divider(height: 32),
+            ],
+
+            // ---------------- PAYMENT BUTTON ----------------
+            if (_shouldShowPayButton()) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.payment),
+                  label: const Text("Pay Now"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PaymentScreen(
+                          booking: booking,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ],

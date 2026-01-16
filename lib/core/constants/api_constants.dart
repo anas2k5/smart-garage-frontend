@@ -10,5 +10,5 @@ class ApiConstants {
 static const String garages = '$baseUrl/garages';
 static const String vehicles = '$baseUrl/vehicles';
 
-
+static const String payments = "$baseUrl/payments";
 }

@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/utils/role_navigator.dart';
 import 'features/auth/login_screen.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  Stripe.publishableKey = "pk_test_51SqA0WCFdVOc1RqKtPuGO3tGbPzkGgubwYl4xZlyA9yz6UptMJcn4RuPWuIk2T68AKGZYCylfibF5UsvpBiybvG900dD2XTe6S";
   runApp(const SmartGarageApp());
 }
 

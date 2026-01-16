@@ -365,6 +365,106 @@ static Future<void> deactivateGarageService(int serviceId) async {
     throw Exception("Failed to deactivate service");
   }
 }
+// ================= OWNER: UPDATE ESTIMATED COST =================
+static Future<void> updateEstimatedCost({
+  required int bookingId,
+  required double estimatedCost,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.bookings}/$bookingId/estimated-cost'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "estimatedCost": estimatedCost,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to update estimated cost");
+  }
+}
+
+// ================= OWNER: UPDATE FINAL COST =================
+static Future<void> updateFinalCost({
+  required int bookingId,
+  required double finalCost,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.bookings}/$bookingId/final-cost'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "finalCost": finalCost,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to update final cost");
+  }
+}
+// ================= STRIPE PAYMENT =================
+
+static Future<Map<String, dynamic>> initiatePayment({
+  required int bookingId,
+  required double amount,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.post(
+    Uri.parse('${ApiConstants.payments}/initiate/$bookingId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "amount": amount,
+      "method": "CARD",
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception("Failed to initiate payment");
+  }
+}
+
+static Future<void> confirmPayment({
+  required int bookingId,
+  required String transactionId,
+  required double amountPaid,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.payments}/confirm/$bookingId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "transactionId": transactionId,
+      "amountPaid": amountPaid,
+      "success": true,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Payment confirmation failed");
+  }
+}
 
 
 }
