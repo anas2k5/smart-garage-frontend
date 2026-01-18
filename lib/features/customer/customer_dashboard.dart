@@ -4,39 +4,54 @@ import '../../core/utils/auth_utils.dart';
 import 'customer_bookings_screen.dart';
 import 'create_booking/select_vehicle_screen.dart';
 
+// ✅ NEW — PAYMENT HISTORY SCREEN
+import 'payment_history_screen.dart';
+
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
 
   @override
-  State<CustomerDashboard> createState() => _CustomerDashboardState();
+  State<CustomerDashboard> createState() =>
+      _CustomerDashboardState();
 }
 
-class _CustomerDashboardState extends State<CustomerDashboard> {
-  late Future<Map<String, dynamic>> _dashboardFuture;
+class _CustomerDashboardState
+    extends State<CustomerDashboard> {
+  late Future<Map<String, dynamic>>
+      _dashboardFuture;
 
   @override
   void initState() {
     super.initState();
-    _dashboardFuture = ApiService.getCustomerDashboard();
+    _dashboardFuture =
+        ApiService.getCustomerDashboard();
   }
 
   void _reload() {
     setState(() {
-      _dashboardFuture = ApiService.getCustomerDashboard();
+      _dashboardFuture =
+          ApiService.getCustomerDashboard();
     });
   }
 
-  Widget _statCard(String title, String value, IconData icon, Color color) {
+  Widget _statCard(
+      String title,
+      String value,
+      IconData icon,
+      Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.4)),
+          borderRadius:
+              BorderRadius.circular(14),
+          border: Border.all(
+              color: color.withOpacity(0.4)),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color),
             const SizedBox(height: 8),
@@ -44,13 +59,15 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               value,
               style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
                 color: color,
               ),
             ),
             Text(
               title,
-              style: const TextStyle(color: Colors.black54),
+              style: const TextStyle(
+                  color: Colors.black54),
             ),
           ],
         ),
@@ -58,30 +75,37 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     );
   }
 
-  Widget _quickAction(
-      String title, IconData icon, VoidCallback onTap) {
+  Widget _quickAction(String title,
+      IconData icon, VoidCallback onTap) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius:
+          BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.deepPurple.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
+          color: Colors.deepPurple
+              .withOpacity(0.08),
+          borderRadius:
+              BorderRadius.circular(14),
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.deepPurple),
+            Icon(icon,
+                color: Colors.deepPurple),
             const SizedBox(width: 12),
             Text(
               title,
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight:
+                    FontWeight.w600,
               ),
             ),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios, size: 16),
+            const Icon(
+                Icons.arrow_forward_ios,
+                size: 16),
           ],
         ),
       ),
@@ -92,7 +116,8 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Customer Dashboard"),
+        title:
+            const Text("Customer Dashboard"),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -109,12 +134,17 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       body: FutureBuilder<Map<String, dynamic>>(
         future: _dashboardFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+                child:
+                    CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return const Center(child: Text("Failed to load dashboard"));
+            return const Center(
+                child:
+                    Text("Failed to load dashboard"));
           }
 
           final data = snapshot.data!;
@@ -122,26 +152,30 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           return RefreshIndicator(
             onRefresh: () async => _reload(),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding:
+                  const EdgeInsets.all(16),
               children: [
                 // 🔥 STATS ROW 1
                 Row(
                   children: [
                     _statCard(
                       "Total",
-                      data["totalBookings"].toString(),
+                      data["totalBookings"]
+                          .toString(),
                       Icons.list_alt,
                       Colors.blue,
                     ),
                     const SizedBox(width: 12),
                     _statCard(
                       "Pending",
-                      data["pendingBookings"].toString(),
+                      data["pendingBookings"]
+                          .toString(),
                       Icons.hourglass_empty,
                       Colors.orange,
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 12),
 
                 // 🔥 STATS ROW 2
@@ -149,14 +183,16 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   children: [
                     _statCard(
                       "Ongoing",
-                      data["ongoingBookings"].toString(),
+                      data["ongoingBookings"]
+                          .toString(),
                       Icons.build_circle,
                       Colors.deepPurple,
                     ),
                     const SizedBox(width: 12),
                     _statCard(
                       "Completed",
-                      data["completedBookings"].toString(),
+                      data["completedBookings"]
+                          .toString(),
                       Icons.check_circle,
                       Colors.green,
                     ),
@@ -167,26 +203,34 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
                 // 🔥 TOTAL SPENT
                 Container(
-                  padding: const EdgeInsets.all(18),
+                  padding:
+                      const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.green),
+                    color: Colors.green
+                        .withOpacity(0.1),
+                    borderRadius:
+                        BorderRadius.circular(
+                            16),
+                    border: Border.all(
+                        color: Colors.green),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.payments, color: Colors.green),
+                      const Icon(Icons.payments,
+                          color: Colors.green),
                       const SizedBox(width: 12),
                       const Text(
                         "Total Spent",
-                        style: TextStyle(fontSize: 16),
+                        style:
+                            TextStyle(fontSize: 16),
                       ),
                       const Spacer(),
                       Text(
                         "₹ ${data["totalSpent"] ?? 0}",
                         style: const TextStyle(
                           fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                           color: Colors.green,
                         ),
                       ),
@@ -210,7 +254,9 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                     );
                   },
                 ),
+
                 const SizedBox(height: 14),
+
                 _quickAction(
                   "Book Service",
                   Icons.car_repair,
@@ -225,6 +271,23 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   },
                 ),
 
+                const SizedBox(height: 14),
+
+                // ✅ NEW — PAYMENT HISTORY
+                _quickAction(
+                  "Payment History",
+                  Icons.receipt_long,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const PaymentHistoryScreen(),
+                      ),
+                    );
+                  },
+                ),
+
                 const SizedBox(height: 24),
 
                 // 🕒 RECENT BOOKINGS
@@ -232,23 +295,33 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   "Recent Bookings",
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 12),
 
-                ...(data["latestBookings"] as List).map((b) {
+                ...(data["latestBookings"]
+                        as List)
+                    .map((b) {
                   return Card(
                     elevation: 2,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    margin:
+                        const EdgeInsets.only(
+                            bottom: 10),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                              12),
                     ),
                     child: ListTile(
                       title: Text(
-                        b["garageName"] ?? "Garage",
+                        b["garageName"] ??
+                            "Garage",
                         style: const TextStyle(
-                            fontWeight: FontWeight.w600),
+                            fontWeight:
+                                FontWeight.w600),
                       ),
                       subtitle: Text(
                         "Status: ${b["status"]}",
@@ -258,7 +331,8 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                             ? "₹ ${b["finalCost"]}"
                             : "N/A",
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
                     ),

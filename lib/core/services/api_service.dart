@@ -485,5 +485,44 @@ static Future<Map<String, dynamic>> getCustomerDashboard() async {
   }
 }
 
+// ================= PAYMENT HISTORY =================
+static Future<List<dynamic>> getMyPayments() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.payments}/me'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception("Failed to load payments");
+  }
+}
+
+// ================= DOWNLOAD INVOICE =================
+static Future<List<int>> downloadInvoice(int bookingId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.get(
+    Uri.parse(
+        '${ApiConstants.payments}/invoice/$bookingId/download'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    return response.bodyBytes;
+  } else {
+    throw Exception("Failed to download invoice");
+  }
+}
 
 }
