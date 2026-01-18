@@ -465,6 +465,25 @@ static Future<void> confirmPayment({
     throw Exception("Payment confirmation failed");
   }
 }
+// ================= CUSTOMER DASHBOARD =================
+static Future<Map<String, dynamic>> getCustomerDashboard() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/dashboard/customer/me'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception("Failed to load dashboard");
+  }
+}
 
 
 }
