@@ -3,7 +3,7 @@ import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
 import 'booking_details_screen.dart';
 
-// ✅ STEP 2 — IMPORT PAYMENT SCREEN
+// ✅ IMPORT PAYMENT SCREEN
 import '../payments/payment_screen.dart';
 
 class CustomerBookingsScreen extends StatefulWidget {
@@ -31,18 +31,16 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'PENDING':
-        return Colors.orange;
-      case 'ACCEPTED':
-        return Colors.grey;
-      case 'IN_PROGRESS':
-        return Colors.blue;
-      case 'COMPLETED':
+      case 'PAID':
         return Colors.green;
+      case 'COMPLETED':
+        return Colors.blue;
+      case 'IN_PROGRESS':
+        return Colors.orange;
       case 'CANCELLED':
         return Colors.red;
       default:
-        return Colors.black54;
+        return Colors.grey;
     }
   }
 
@@ -106,6 +104,11 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
               itemCount: bookings.length,
               itemBuilder: (context, index) {
                 final booking = bookings[index];
+
+                final bool isPaid = booking.status == 'PAID';
+                final bool isCompleted = booking.status == 'COMPLETED';
+                final bool canCancel = booking.status == 'PENDING' ||
+                    booking.status == 'ACCEPTED';
 
                 return InkWell(
                   borderRadius: BorderRadius.circular(12),
@@ -174,23 +177,58 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                                 const TextStyle(color: Colors.black54),
                           ),
 
-                          // 💳 PAY NOW BUTTON
-                          if (booking.status == 'COMPLETED' &&
-                              booking.finalCost != null) ...[
+                          // ✅ PAID BADGE
+                          if (isPaid) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green
+                                      .withOpacity(0.15),
+                                  borderRadius:
+                                      BorderRadius.circular(20),
+                                  border: Border.all(
+                                      color: Colors.green),
+                                ),
+                                child: const Text(
+                                  "PAID",
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight:
+                                        FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          // 💳 PAY NOW BUTTON (Only if COMPLETED & NOT PAID)
+                          if (isCompleted &&
+                              booking.finalCost != null &&
+                              !isPaid) ...[
                             const SizedBox(height: 10),
                             Align(
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
-                                icon: const Icon(Icons.payment),
-                                label: const Text("Pay Now"),
+                                icon:
+                                    const Icon(Icons.payment),
+                                label:
+                                    const Text("Pay Now"),
                                 onPressed: () async {
-                                  final paid = await Navigator.push(
+                                  final paid =
+                                      await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                    builder: (_) => PaymentScreen(
-  booking: booking,
-),
-
+                                      builder: (_) =>
+                                          PaymentScreen(
+                                        booking: booking,
+                                      ),
                                     ),
                                   );
 
@@ -202,19 +240,25 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                             ),
                           ],
 
-                          // 🔥 CANCEL BUTTON
-                          if (booking.status == 'PENDING') ...[
+                          // 🔥 CANCEL BUTTON (Only if PENDING / ACCEPTED & NOT PAID / NOT CANCELLED)
+                          if (canCancel &&
+                              booking.status != 'PAID' &&
+                              booking.status != 'CANCELLED') ...[
                             const SizedBox(height: 10),
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.red,
+                                style: TextButton
+                                    .styleFrom(
+                                  foregroundColor:
+                                      Colors.red,
                                 ),
                                 onPressed: () =>
-                                    _confirmCancel(context, booking.id),
-                                child:
-                                    const Text("Cancel Booking"),
+                                    _confirmCancel(
+                                        context,
+                                        booking.id),
+                                child: const Text(
+                                    "Cancel Booking"),
                               ),
                             ),
                           ],
