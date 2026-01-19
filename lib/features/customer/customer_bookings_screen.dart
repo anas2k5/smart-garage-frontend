@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
 import 'booking_details_screen.dart';
-
-// ✅ IMPORT PAYMENT SCREEN
 import '../payments/payment_screen.dart';
 
 class CustomerBookingsScreen extends StatefulWidget {
-  const CustomerBookingsScreen({super.key});
+  final String? statusFilter; // ✅ NEW
+
+  const CustomerBookingsScreen({
+    super.key,
+    this.statusFilter,
+  });
 
   @override
   State<CustomerBookingsScreen> createState() =>
       _CustomerBookingsScreenState();
 }
 
-class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
+class _CustomerBookingsScreenState
+    extends State<CustomerBookingsScreen> {
   late Future<List<Booking>> _bookingsFuture;
 
   @override
@@ -39,9 +43,18 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
         return Colors.orange;
       case 'CANCELLED':
         return Colors.red;
-      default:
+      case 'PENDING':
         return Colors.grey;
+      default:
+        return Colors.black54;
     }
+  }
+
+  List<Booking> _applyFilter(List<Booking> bookings) {
+    if (widget.statusFilter == null) return bookings;
+    return bookings
+        .where((b) => b.status == widget.statusFilter)
+        .toList();
   }
 
   // ✅ CANCEL CONFIRMATION
@@ -76,15 +89,21 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final title = widget.statusFilter == null
+        ? "My Bookings"
+        : "${widget.statusFilter} Bookings";
+
     return Scaffold(
-      appBar: AppBar(title: const Text("My Bookings")),
+      appBar: AppBar(title: Text(title)),
       body: RefreshIndicator(
         onRefresh: () async => _reload(),
         child: FutureBuilder<List<Booking>>(
           future: _bookingsFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(
+                  child: CircularProgressIndicator());
             }
 
             if (snapshot.hasError) {
@@ -93,78 +112,106 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
               );
             }
 
-            final bookings = snapshot.data ?? [];
+            final bookings =
+                _applyFilter(snapshot.data ?? []);
 
             if (bookings.isEmpty) {
-              return const Center(child: Text("No bookings found"));
+              return Center(
+                child: Text(
+                  widget.statusFilter == null
+                      ? "No bookings found"
+                      : "No ${widget.statusFilter} bookings",
+                ),
+              );
             }
 
             return ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics:
+                  const AlwaysScrollableScrollPhysics(),
               itemCount: bookings.length,
               itemBuilder: (context, index) {
                 final booking = bookings[index];
 
-                final bool isPaid = booking.status == 'PAID';
-                final bool isCompleted = booking.status == 'COMPLETED';
-                final bool canCancel = booking.status == 'PENDING' ||
-                    booking.status == 'ACCEPTED';
+                final bool isPaid =
+                    booking.status == 'PAID';
+                final bool isCompleted =
+                    booking.status == 'COMPLETED';
+                final bool canCancel =
+                    booking.status == 'PENDING' ||
+                        booking.status == 'ACCEPTED';
 
                 return InkWell(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius:
+                      BorderRadius.circular(12),
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            BookingDetailsScreen(booking: booking),
+                            BookingDetailsScreen(
+                                booking: booking),
                       ),
                     );
                   },
                   child: Card(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    margin:
+                        const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8),
                     elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                              12),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding:
+                          const EdgeInsets.all(12),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment
+                                .start,
                         children: [
                           Text(
                             "Booking #${booking.id}",
                             style: const TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight:
+                                  FontWeight
+                                      .bold,
                             ),
                           ),
 
                           const SizedBox(height: 6),
                           Text(
                             booking.garageName,
-                            style: const TextStyle(
-                                color: Colors.black54),
+                            style:
+                                const TextStyle(
+                                    color: Colors
+                                        .black54),
                           ),
 
                           const SizedBox(height: 6),
                           Text(
                             "Service: ${booking.serviceType ?? 'Not assigned'}",
-                            style: const TextStyle(
-                                color: Colors.black87),
                           ),
 
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Text("Status: "),
+                              const Text(
+                                  "Status: "),
                               Text(
                                 booking.status,
                                 style: TextStyle(
                                   color:
-                                      _statusColor(booking.status),
-                                  fontWeight: FontWeight.bold,
+                                      _statusColor(
+                                          booking
+                                              .status),
+                                  fontWeight:
+                                      FontWeight
+                                          .bold,
                                 ),
                               ),
                             ],
@@ -173,66 +220,88 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                           const SizedBox(height: 6),
                           Text(
                             "Final Cost: ${booking.finalCost != null ? "₹ ${booking.finalCost}" : "N/A"}",
-                            style:
-                                const TextStyle(color: Colors.black54),
                           ),
 
                           // ✅ PAID BADGE
                           if (isPaid) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(
+                                height: 8),
                             Align(
-                              alignment: Alignment.centerRight,
+                              alignment:
+                                  Alignment
+                                      .centerRight,
                               child: Container(
                                 padding:
-                                    const EdgeInsets.symmetric(
+                                    const EdgeInsets
+                                        .symmetric(
                                   horizontal: 10,
                                   vertical: 4,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green
-                                      .withOpacity(0.15),
+                                decoration:
+                                    BoxDecoration(
+                                  color: Colors
+                                      .green
+                                      .withOpacity(
+                                          0.15),
                                   borderRadius:
-                                      BorderRadius.circular(20),
+                                      BorderRadius
+                                          .circular(
+                                              20),
                                   border: Border.all(
-                                      color: Colors.green),
+                                      color: Colors
+                                          .green),
                                 ),
                                 child: const Text(
                                   "PAID",
-                                  style: TextStyle(
-                                    color: Colors.green,
+                                  style:
+                                      TextStyle(
+                                    color: Colors
+                                        .green,
                                     fontWeight:
-                                        FontWeight.bold,
+                                        FontWeight
+                                            .bold,
                                   ),
                                 ),
                               ),
                             ),
                           ],
 
-                          // 💳 PAY NOW BUTTON (Only if COMPLETED & NOT PAID)
+                          // 💳 PAY NOW
                           if (isCompleted &&
-                              booking.finalCost != null &&
+                              booking.finalCost !=
+                                  null &&
                               !isPaid) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(
+                                height: 10),
                             Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton.icon(
-                                icon:
-                                    const Icon(Icons.payment),
-                                label:
-                                    const Text("Pay Now"),
-                                onPressed: () async {
+                              alignment:
+                                  Alignment
+                                      .centerRight,
+                              child:
+                                  ElevatedButton
+                                      .icon(
+                                icon: const Icon(
+                                    Icons.payment),
+                                label: const Text(
+                                    "Pay Now"),
+                                onPressed:
+                                    () async {
                                   final paid =
-                                      await Navigator.push(
+                                      await Navigator
+                                          .push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          PaymentScreen(
-                                        booking: booking,
+                                      builder:
+                                          (_) =>
+                                              PaymentScreen(
+                                        booking:
+                                            booking,
                                       ),
                                     ),
                                   );
 
-                                  if (paid == true) {
+                                  if (paid ==
+                                      true) {
                                     _reload();
                                   }
                                 },
@@ -240,23 +309,30 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                             ),
                           ],
 
-                          // 🔥 CANCEL BUTTON (Only if PENDING / ACCEPTED & NOT PAID / NOT CANCELLED)
+                          // 🔥 CANCEL BUTTON
                           if (canCancel &&
-                              booking.status != 'PAID' &&
-                              booking.status != 'CANCELLED') ...[
-                            const SizedBox(height: 10),
+                              booking.status !=
+                                  'PAID' &&
+                              booking.status !=
+                                  'CANCELLED') ...[
+                            const SizedBox(
+                                height: 10),
                             Align(
-                              alignment: Alignment.centerRight,
+                              alignment:
+                                  Alignment
+                                      .centerRight,
                               child: TextButton(
                                 style: TextButton
                                     .styleFrom(
                                   foregroundColor:
                                       Colors.red,
                                 ),
-                                onPressed: () =>
-                                    _confirmCancel(
-                                        context,
-                                        booking.id),
+                                onPressed:
+                                    () =>
+                                        _confirmCancel(
+                                  context,
+                                  booking.id,
+                                ),
                                 child: const Text(
                                     "Cancel Booking"),
                               ),

@@ -34,49 +34,61 @@ class _CustomerDashboardState
     });
   }
 
-  Widget _statCard(
-      String title,
-      String value,
-      IconData icon,
-      Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius:
-              BorderRadius.circular(14),
-          border: Border.all(
-              color: color.withOpacity(0.4)),
-        ),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight:
-                    FontWeight.bold,
-                color: color,
-              ),
-            ),
-            Text(
-              title,
-              style: const TextStyle(
-                  color: Colors.black54),
-            ),
-          ],
+  // ✅ CLICKABLE STATS NAVIGATION
+  void _openFiltered(BuildContext context, String? status) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CustomerBookingsScreen(
+          statusFilter: status,
         ),
       ),
     );
   }
 
-  Widget _quickAction(String title,
-      IconData icon, VoidCallback onTap) {
+  Widget _statCard(
+      String title,
+      String value,
+      IconData icon,
+      Color color) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius:
+            BorderRadius.circular(14),
+        border: Border.all(
+            color: color.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight:
+                  FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            title,
+            style: const TextStyle(
+                color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickAction(
+      String title,
+      IconData icon,
+      VoidCallback onTap) {
     return InkWell(
       borderRadius:
           BorderRadius.circular(14),
@@ -158,20 +170,34 @@ class _CustomerDashboardState
                 // 🔥 STATS ROW 1
                 Row(
                   children: [
-                    _statCard(
-                      "Total",
-                      data["totalBookings"]
-                          .toString(),
-                      Icons.list_alt,
-                      Colors.blue,
+                    Expanded(
+                      child: InkWell(
+                        onTap: () =>
+                            _openFiltered(
+                                context, null),
+                        child: _statCard(
+                          "Total",
+                          data["totalBookings"]
+                              .toString(),
+                          Icons.list_alt,
+                          Colors.blue,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    _statCard(
-                      "Pending",
-                      data["pendingBookings"]
-                          .toString(),
-                      Icons.hourglass_empty,
-                      Colors.orange,
+                    Expanded(
+                      child: InkWell(
+                        onTap: () =>
+                            _openFiltered(
+                                context, "PENDING"),
+                        child: _statCard(
+                          "Pending",
+                          data["pendingBookings"]
+                              .toString(),
+                          Icons.hourglass_empty,
+                          Colors.orange,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -181,20 +207,34 @@ class _CustomerDashboardState
                 // 🔥 STATS ROW 2
                 Row(
                   children: [
-                    _statCard(
-                      "Ongoing",
-                      data["ongoingBookings"]
-                          .toString(),
-                      Icons.build_circle,
-                      Colors.deepPurple,
+                    Expanded(
+                      child: InkWell(
+                        onTap: () =>
+                            _openFiltered(
+                                context, "IN_PROGRESS"),
+                        child: _statCard(
+                          "Ongoing",
+                          data["ongoingBookings"]
+                              .toString(),
+                          Icons.build_circle,
+                          Colors.deepPurple,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    _statCard(
-                      "Completed",
-                      data["completedBookings"]
-                          .toString(),
-                      Icons.check_circle,
-                      Colors.green,
+                    Expanded(
+                      child: InkWell(
+                        onTap: () =>
+                            _openFiltered(
+                                context, "COMPLETED"),
+                        child: _statCard(
+                          "Completed",
+                          data["completedBookings"]
+                              .toString(),
+                          Icons.check_circle,
+                          Colors.green,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -273,7 +313,7 @@ class _CustomerDashboardState
 
                 const SizedBox(height: 14),
 
-                // ✅ NEW — PAYMENT HISTORY
+                // ✅ PAYMENT HISTORY
                 _quickAction(
                   "Payment History",
                   Icons.receipt_long,
