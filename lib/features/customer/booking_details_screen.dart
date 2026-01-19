@@ -10,6 +10,28 @@ class BookingDetailsScreen extends StatelessWidget {
     required this.booking,
   });
 
+  // ---------------- TIMELINE CONFIG ----------------
+  static const List<String> _steps = [
+    "PENDING",
+    "ACCEPTED",
+    "IN_PROGRESS",
+    "COMPLETED",
+    "PAID",
+  ];
+
+  int _currentStepIndex() {
+    return _steps.indexOf(booking.status);
+  }
+
+  bool _isCompleted(int index) {
+    return index < _currentStepIndex();
+  }
+
+  bool _isCurrent(int index) {
+    return index == _currentStepIndex();
+  }
+
+  // ---------------- UI HELPERS ----------------
   Color _statusColor(String status) {
     switch (status) {
       case 'PENDING':
@@ -20,6 +42,8 @@ class BookingDetailsScreen extends StatelessWidget {
         return Colors.purple;
       case 'COMPLETED':
         return Colors.green;
+      case 'PAID':
+        return Colors.teal;
       case 'CANCELLED':
         return Colors.red;
       default:
@@ -59,12 +83,98 @@ class BookingDetailsScreen extends StatelessWidget {
     );
   }
 
-  bool _shouldShowPayButton() {
-    return booking.finalCost != null &&
-        booking.status != 'COMPLETED' &&
-        booking.status != 'CANCELLED';
+  // ---------------- TIMELINE UI ----------------
+  Widget _buildTimeline() {
+    if (booking.status == "CANCELLED") {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red),
+        ),
+        child: Row(
+          children: const [
+            Icon(Icons.cancel, color: Colors.red),
+            SizedBox(width: 10),
+            Text(
+              "This booking has been cancelled",
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(_steps.length, (index) {
+        final bool completed = _isCompleted(index);
+        final bool current = _isCurrent(index);
+
+        Color dotColor = Colors.grey;
+        if (completed) dotColor = Colors.green;
+        if (current) dotColor = Colors.blue;
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                    boxShadow: current
+                        ? [
+                            BoxShadow(
+                              color: dotColor.withOpacity(0.6),
+                              blurRadius: 8,
+                            )
+                          ]
+                        : [],
+                  ),
+                ),
+                if (index != _steps.length - 1)
+                  Container(
+                    width: 2,
+                    height: 30,
+                    color: completed
+                        ? Colors.green
+                        : Colors.grey.withOpacity(0.5),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                _steps[index].replaceAll("_", " "),
+                style: TextStyle(
+                  fontWeight:
+                      current ? FontWeight.bold : FontWeight.normal,
+                  color: current ? Colors.blue : Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
   }
 
+  bool _shouldShowPayButton() {
+    return booking.finalCost != null &&
+        booking.status == 'COMPLETED';
+  }
+
+  // ---------------- MAIN UI ----------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,6 +203,12 @@ class BookingDetailsScreen extends StatelessWidget {
             ),
             _infoRow("Service Type", booking.serviceType ?? "N/A"),
             _infoRow("Booking Time", booking.bookingTime),
+
+            const Divider(height: 32),
+
+            // ---------------- TIMELINE ----------------
+            _sectionTitle("Booking Progress"),
+            _buildTimeline(),
 
             const Divider(height: 32),
 
