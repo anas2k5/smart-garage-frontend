@@ -524,5 +524,52 @@ static Future<List<int>> downloadInvoice(int bookingId) async {
     throw Exception("Failed to download invoice");
   }
 }
+// ================= ADD VEHICLE =================
+static Future<void> addVehicle({
+  required String plateNumber,
+  required String make,
+  required String model,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.post(
+    Uri.parse(ApiConstants.vehicles),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      "plateNumber": plateNumber,
+      "make": make,
+      "model": model,
+    }),
+  );
+
+  if (response.statusCode != 201 && response.statusCode != 200) {
+    print("❌ ADD VEHICLE FAILED => ${response.body}");
+    throw Exception("Failed to add vehicle");
+  }
+}
+
+// ================= DELETE VEHICLE =================
+static Future<void> deleteVehicle(int vehicleId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final response = await http.delete(
+    Uri.parse('${ApiConstants.vehicles}/$vehicleId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode != 204 && response.statusCode != 200) {
+    print("❌ DELETE VEHICLE FAILED => ${response.body}");
+    throw Exception("Failed to delete vehicle");
+  }
+}
+
 
 }
