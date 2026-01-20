@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/services/api_service.dart';
 
@@ -23,31 +25,128 @@ class _PaymentHistoryScreenState
     _paymentsFuture = ApiService.getMyPayments();
   }
 
-  Future<void> _downloadInvoice(int bookingId) async {
-    try {
-      final bytes =
-          await ApiService.downloadInvoice(bookingId);
+  // ================= FILE HELPERS =================
 
-      final dir =
-          await getApplicationDocumentsDirectory();
-      final file =
-          File('${dir.path}/invoice-$bookingId.pdf');
-
-      await file.writeAsBytes(bytes);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Invoice saved to ${file.path}"),
-        ),
-      );
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Download failed"),
-        ),
-      );
-    }
+  Future<File> _getInvoiceFile(int bookingId) async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/invoice-$bookingId.pdf');
   }
+
+  Future<File> _downloadInvoiceFile(int bookingId) async {
+    final bytes =
+        await ApiService.downloadInvoice(bookingId);
+
+    final file = await _getInvoiceFile(bookingId);
+    await file.writeAsBytes(bytes, flush: true);
+
+    return file;
+  }
+
+  // ================= ACTION SHEET =================
+
+  void _showInvoiceActions(int bookingId) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+
+            const Text(
+              "Invoice Options",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            ListTile(
+              leading: const Icon(Icons.open_in_new),
+              title: const Text("Open PDF"),
+              onTap: () async {
+                Navigator.pop(context);
+
+                try {
+                  final file =
+                      await _downloadInvoiceFile(
+                          bookingId);
+
+                  await OpenFilex.open(file.path);
+                } catch (_) {
+                  _showError();
+                }
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text("Share PDF"),
+              onTap: () async {
+                Navigator.pop(context);
+
+                try {
+                  final file =
+                      await _downloadInvoiceFile(
+                          bookingId);
+
+                  await Share.shareXFiles(
+                    [XFile(file.path)],
+                    text:
+                        "Invoice for Booking #$bookingId",
+                  );
+                } catch (_) {
+                  _showError();
+                }
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: const Text("Download PDF"),
+              onTap: () async {
+                Navigator.pop(context);
+
+                try {
+                  final file =
+                      await _downloadInvoiceFile(
+                          bookingId);
+
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          "Saved to ${file.path}"),
+                    ),
+                  );
+                } catch (_) {
+                  _showError();
+                }
+              },
+            ),
+
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Invoice action failed"),
+      ),
+    );
+  }
+
+  // ================= UI HELPERS =================
 
   Widget _statusChip(String status) {
     final isSuccess = status == "SUCCESS";
@@ -73,6 +172,8 @@ class _PaymentHistoryScreenState
       ),
     );
   }
+
+  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +219,6 @@ class _PaymentHistoryScreenState
                     ),
                   ),
 
-                  // ✅ EVERYTHING BELOW GOES INSIDE SUBTITLE
                   subtitle: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
@@ -150,14 +250,13 @@ class _PaymentHistoryScreenState
                     ],
                   ),
 
-                  // ✅ ACTION ON RIGHT
                   trailing: p["status"] == "SUCCESS"
-                      ? ElevatedButton(
+                      ? ElevatedButton.icon(
+                          icon: const Icon(Icons.receipt),
+                          label: const Text("Invoice"),
                           onPressed: () =>
-                              _downloadInvoice(
+                              _showInvoiceActions(
                                   p["bookingId"]),
-                          child:
-                              const Text("Invoice"),
                         )
                       : const Text(
                           "Pending",

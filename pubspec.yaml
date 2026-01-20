@@ -11,7 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  open_filex: ^4.3.2
+  share_plus: ^7.2.1
   intl: ^0.18.1
   path_provider: ^2.1.2
   flutter_stripe: ^10.1.1
