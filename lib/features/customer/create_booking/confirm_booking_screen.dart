@@ -18,10 +18,12 @@ class ConfirmBookingScreen extends StatefulWidget {
   });
 
   @override
-  State<ConfirmBookingScreen> createState() => _ConfirmBookingScreenState();
+  State<ConfirmBookingScreen> createState() =>
+      _ConfirmBookingScreenState();
 }
 
-class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
+class _ConfirmBookingScreenState
+    extends State<ConfirmBookingScreen> {
   bool _loading = false;
 
   Future<void> _confirmBooking() async {
@@ -32,73 +34,188 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
         garageId: widget.garage.id,
         vehicleId: widget.vehicle.id,
         serviceId: widget.service.id,
-        bookingTime: DateTime.now().add(const Duration(hours: 2)),
+        bookingTime:
+            DateTime.now().add(const Duration(hours: 2)),
         details: "Booked via mobile app",
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Booking created successfully")),
+        const SnackBar(
+            content:
+                Text("✅ Booking created successfully")),
       );
 
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (_) => const CustomerBookingsScreen(),
+          builder: (_) =>
+              const CustomerBookingsScreen(),
         ),
         (_) => false,
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Failed to create booking")),
+        const SnackBar(
+            content:
+                Text("❌ Failed to create booking")),
       );
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Confirm Booking")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _info("Garage", widget.garage.name),
-            _info("Vehicle", widget.vehicle.plateNumber),
-            _info("Service", widget.service.name),
-            _info("Price", "₹ ${widget.service.price}"),
-
-            const SizedBox(height: 30),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _confirmBooking,
-                child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Confirm Booking"),
-              ),
-            ),
+  // ================= SAFE STEP HEADER =================
+  Widget _stepHeader() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: const [
+            _StepChip(title: "Vehicle", done: true),
+            SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios, size: 14),
+            SizedBox(width: 8),
+            _StepChip(title: "Garage", done: true),
+            SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios, size: 14),
+            SizedBox(width: 8),
+            _StepChip(title: "Service", done: true),
+            SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios, size: 14),
+            SizedBox(width: 8),
+            _StepChip(title: "Confirm", active: true),
           ],
         ),
       ),
     );
   }
 
-  Widget _info(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Text(
-            "$label: ",
-            style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _infoTile(
+      IconData icon, String label, String value) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14)),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.deepPurple,
+          child: Icon(icon, color: Colors.white),
+        ),
+        title: Text(label),
+        subtitle: Text(
+          value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style:
+              const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar:
+          AppBar(title: const Text("Confirm Booking")),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.check_circle),
+              label: _loading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text("Confirm Booking"),
+              onPressed:
+                  _loading ? null : _confirmBooking,
+            ),
           ),
-          Expanded(child: Text(value)),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _stepHeader(),
+              const SizedBox(height: 20),
+
+              _infoTile(Icons.store, "Garage",
+                  widget.garage.name),
+              _infoTile(Icons.directions_car,
+                  "Vehicle",
+                  widget.vehicle.plateNumber),
+              _infoTile(Icons.build, "Service",
+                  widget.service.name),
+              _infoTile(Icons.payments, "Price",
+                  "₹ ${widget.service.price}"),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ================= STEP CHIP =================
+class _StepChip extends StatelessWidget {
+  final String title;
+  final bool active;
+  final bool done;
+
+  const _StepChip({
+    required this.title,
+    this.active = false,
+    this.done = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color bgColor = active
+        ? Colors.deepPurple
+        : done
+            ? Colors.green
+            : Colors.grey.shade300;
+
+    Color textColor =
+        active || done ? Colors.white : Colors.black54;
+
+    return Chip(
+      backgroundColor: bgColor,
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (done) ...[
+            const Icon(Icons.check,
+                size: 14, color: Colors.white),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            title,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
