@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/api_service.dart';
-import '../../core/utils/role_navigator.dart';
-import '../../models/login_response.dart';
-import 'register_screen.dart';
+import 'login_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  String _selectedRole = "CUSTOMER";
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  Future<void> _login() async {
-    if (_emailController.text.isEmpty ||
+  Future<void> _register() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
         _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
@@ -31,29 +31,27 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      LoginResponse response = await ApiService.login(
+      await ApiService.register(
+        fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        role: _selectedRole,
       );
 
-      final prefs = await SharedPreferences.getInstance();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registration successful! Please login")),
+      );
 
-      print("SAVING USER ID: ${response.userId}");
-
-      await prefs.setString('token', response.token);
-      await prefs.setInt('userId', response.userId);
-      await prefs.setString('role', response.role);
-
-      // 🎯 ROLE BASED NAVIGATION
+      // ✅ CORRECT NAVIGATION (POSITIONAL ARGUMENTS)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => RoleNavigator.getHomeByRole(response.role),
+          builder: (_) => const LoginScreen(),
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid email or password")),
+        const SnackBar(content: Text("Registration failed")),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -104,12 +102,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        "Login to continue",
+                        "Create your account",
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
 
-                      // EMAIL FIELD
+                      // FULL NAME
+                      TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: "Full Name",
+                          prefixIcon: Icon(Icons.person),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // EMAIL
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
@@ -121,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // PASSWORD FIELD
+                      // PASSWORD
                       TextField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
@@ -143,9 +152,36 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+
+                      // ROLE DROPDOWN
+                      DropdownButtonFormField<String>(
+                        value: _selectedRole,
+                        decoration: const InputDecoration(
+                          labelText: "Role",
+                          prefixIcon: Icon(Icons.security),
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: "CUSTOMER",
+                            child: Text("Customer"),
+                          ),
+                          DropdownMenuItem(
+                            value: "OWNER",
+                            child: Text("Garage Owner"),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value!;
+                          });
+                        },
+                      ),
+
                       const SizedBox(height: 24),
 
-                      // LOGIN BUTTON
+                      // REGISTER BUTTON
                       SizedBox(
                         width: double.infinity,
                         height: 48,
@@ -154,15 +190,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             backgroundColor: const Color(0xFF2C5364),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          ),
-                          onPressed: _isLoading ? null : _login,
+                          onPressed: _isLoading ? null : _register,
                           child: _isLoading
                               ? const CircularProgressIndicator(
                                   color: Colors.white,
                                 )
                               : const Text(
-                                  "Login",
+                                  "Register",
                                   style: TextStyle(fontSize: 16),
                                 ),
                         ),
@@ -170,17 +206,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 16),
 
-                      // REGISTER LINK
+                      // GO TO LOGIN
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
+                          Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
+                              builder: (_) => const LoginScreen(),
                             ),
                           );
                         },
-                        child: const Text("Don't have an account? Register"),
+                        child:
+                            const Text("Already have an account? Login"),
                       ),
                     ],
                   ),

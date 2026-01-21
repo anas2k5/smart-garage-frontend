@@ -512,4 +512,29 @@ class ApiService {
       throw _handleError(response);
     }
   }
+ // ================= REGISTER =================
+static Future<void> register({
+  required String fullName,
+  required String email,
+  required String password,
+  required String role,
+}) async {
+  final response = await http.post(
+    Uri.parse(ApiConstants.register),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'fullName': fullName,
+      'email': email,
+      'password': password,
+      'role': role,
+    }),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return;
+  } else {
+    throw _handleError(response);
+  }
+}
+
 }

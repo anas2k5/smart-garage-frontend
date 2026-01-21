@@ -4,6 +4,7 @@ class ApiConstants {
   // AUTH
   static const String login = '$baseUrl/auth/login';
 
+static const String register = '$baseUrl/auth/register';  
   // BOOKINGS
   static const String bookings = '$baseUrl/bookings';
   // 🏢 GARAGES
