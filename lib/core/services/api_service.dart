@@ -1,17 +1,50 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../models/booking.dart';
 import '../../models/mechanic.dart';
-
-import '../constants/api_constants.dart';
 import '../../models/login_response.dart';
 import '../../models/garage.dart';
 import '../../models/vehicle.dart';
 import '../../models/garage_service.dart';
+import '../constants/api_constants.dart';
 
 class ApiService {
+  // ================= CORE HELPERS =================
+
+  static Future<String> _requireToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null || token.isEmpty) {
+      throw Exception("Session expired. Please log in again.");
+    }
+    return token;
+  }
+
+  static Future<Map<String, String>> _authHeaders() async {
+    final token = await _requireToken();
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+  }
+
+  static Exception _handleError(http.Response response) {
+    print("❌ API ERROR ${response.statusCode} => ${response.body}");
+
+    if (response.statusCode == 401) {
+      return Exception("Session expired. Please log in again.");
+    } else if (response.statusCode == 403) {
+      return Exception("You are not authorized to perform this action.");
+    } else {
+      return Exception("Server error. Please try again later.");
+    }
+  }
+
   // ================= LOGIN =================
+
   static Future<LoginResponse> login({
     required String email,
     required String password,
@@ -29,130 +62,52 @@ class ApiService {
       final json = jsonDecode(response.body);
       final loginResponse = LoginResponse.fromJson(json);
 
-      // ✅ SAVE TOKEN
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', loginResponse.token);
       await prefs.setInt('userId', loginResponse.userId);
       await prefs.setString('role', loginResponse.role);
 
-      print("✅ TOKEN SAVED => ${loginResponse.token}");
       return loginResponse;
     } else {
-      throw Exception("Login failed");
+      throw _handleError(response);
     }
   }
 
- // ================= CUSTOMER BOOKINGS =================
-static Future<List<Booking>> getCustomerBookings() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  // ================= CUSTOMER DASHBOARD =================
 
-  final response = await http.get(
-    Uri.parse('${ApiConstants.bookings}/me'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
-
-  print("📦 BOOKINGS STATUS => ${response.statusCode}");
-  print("📦 BOOKINGS BODY => ${response.body}");
-
-  if (response.statusCode == 200) {
-    final List data = jsonDecode(response.body);
-    return data.map((e) => Booking.fromJson(e)).toList();
-  } else {
-    throw Exception('Failed to load bookings');
-  }
-}
-
-
-  // ================= CANCEL BOOKING =================
-  static Future<void> cancelBooking(int bookingId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    final response = await http.put(
-      Uri.parse('${ApiConstants.bookings}/$bookingId/status'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'status': 'CANCELLED'}),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to cancel booking');
-    }
-  }
-
-  // ================= FETCH GARAGES =================
-  static Future<List<Garage>> getGarages() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+  static Future<Map<String, dynamic>> getCustomerDashboard() async {
+    final headers = await _authHeaders();
 
     final response = await http.get(
-      Uri.parse(ApiConstants.garages),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
+      Uri.parse('${ApiConstants.baseUrl}/dashboard/customer/me'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw _handleError(response);
+    }
+  }
+
+  // ================= BOOKINGS =================
+
+  static Future<List<Booking>> getCustomerBookings() async {
+    final headers = await _authHeaders();
+
+    final response = await http.get(
+      Uri.parse('${ApiConstants.bookings}/me'),
+      headers: headers,
     );
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
-      return data.map((e) => Garage.fromJson(e)).toList();
+      return data.map((e) => Booking.fromJson(e)).toList();
     } else {
-      throw Exception('Failed to load garages');
+      throw _handleError(response);
     }
   }
 
-  // ================= FETCH MY VEHICLES =================
-  static Future<List<Vehicle>> getMyVehicles() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    final response = await http.get(
-      Uri.parse(ApiConstants.vehicles),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    print("🚗 VEHICLES STATUS => ${response.statusCode}");
-    print("🚗 VEHICLES BODY => ${response.body}");
-
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      return data.map((e) => Vehicle.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load vehicles');
-    }
-  }
-
-  // ================= FETCH GARAGE SERVICES =================
-  static Future<List<GarageService>> getGarageServices(int garageId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    final response = await http.get(
-      Uri.parse('${ApiConstants.garages}/$garageId/services'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      return data.map((e) => GarageService.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load services');
-    }
-  }
-
-  // ================= CREATE BOOKING (UPDATED) =================
   static Future<void> createBooking({
     required int garageId,
     required int vehicleId,
@@ -160,15 +115,11 @@ static Future<List<Booking>> getCustomerBookings() async {
     required DateTime bookingTime,
     String? details,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final headers = await _authHeaders();
 
     final response = await http.post(
       Uri.parse(ApiConstants.bookings),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       body: jsonEncode({
         "garageId": garageId,
         "vehicleId": vehicleId,
@@ -178,398 +129,387 @@ static Future<List<Booking>> getCustomerBookings() async {
       }),
     );
 
-    if (response.statusCode != 200) {
-      print("❌ CREATE BOOKING FAILED => ${response.body}");
-      throw Exception("Failed to create booking");
+    if (response.statusCode != 200 &&
+        response.statusCode != 201) {
+      throw _handleError(response);
     }
   }
-  //owner owned garages
+
+  static Future<void> cancelBooking(int bookingId) async {
+    final headers = await _authHeaders();
+
+    final response = await http.put(
+      Uri.parse('${ApiConstants.bookings}/$bookingId/status'),
+      headers: headers,
+      body: jsonEncode({'status': 'CANCELLED'}),
+    );
+
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
+  }
+
+  // ================= GARAGES =================
+
+  static Future<List<Garage>> getGarages() async {
+    final headers = await _authHeaders();
+
+    final response = await http.get(
+      Uri.parse(ApiConstants.garages),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((e) => Garage.fromJson(e)).toList();
+    } else {
+      throw _handleError(response);
+    }
+  }
+
   static Future<List<Garage>> getOwnerGarages() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+    final headers = await _authHeaders();
 
-  final response = await http.get(
-    Uri.parse('${ApiConstants.garages}/me'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+    final response = await http.get(
+      Uri.parse('${ApiConstants.garages}/me'),
+      headers: headers,
+    );
 
-  if (response.statusCode == 200) {
-    final List data = jsonDecode(response.body);
-    return data.map((e) => Garage.fromJson(e)).toList();
-  } else {
-    throw Exception('Failed to load owner garages');
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((e) => Garage.fromJson(e)).toList();
+    } else {
+      throw _handleError(response);
+    }
   }
-}
-// ================= OWNER: FETCH BOOKINGS BY GARAGE =================
-static Future<List<dynamic>> getBookingsByGarage(int garageId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.get(
-    Uri.parse('${ApiConstants.bookings}/garage/$garageId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+  // ================= VEHICLES =================
 
-  print("🏭 GARAGE BOOKINGS STATUS => ${response.statusCode}");
-  print("🏭 GARAGE BOOKINGS BODY => ${response.body}");
+  static Future<List<Vehicle>> getMyVehicles() async {
+    final headers = await _authHeaders();
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception("Failed to load garage bookings");
+    final response = await http.get(
+      Uri.parse(ApiConstants.vehicles),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((e) => Vehicle.fromJson(e)).toList();
+    } else {
+      throw _handleError(response);
+    }
   }
-}
-// ================= OWNER: UPDATE BOOKING STATUS =================
-static Future<void> updateBookingStatus({
-  required int bookingId,
-  required String status,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.put(
-    Uri.parse('${ApiConstants.bookings}/$bookingId/status'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "status": status,
-    }),
-  );
+  static Future<void> addVehicle({
+    required String plateNumber,
+    required String make,
+    required String model,
+  }) async {
+    final headers = await _authHeaders();
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to update booking status");
+    final response = await http.post(
+      Uri.parse(ApiConstants.vehicles),
+      headers: headers,
+      body: jsonEncode({
+        "plateNumber": plateNumber,
+        "make": make,
+        "model": model,
+      }),
+    );
+
+    if (response.statusCode != 200 &&
+        response.statusCode != 201) {
+      throw _handleError(response);
+    }
   }
-}
-static Future<List<Mechanic>> getMechanicsByGarage(int garageId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.get(
-    Uri.parse('${ApiConstants.baseUrl}/mechanics/garage/$garageId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+  static Future<void> deleteVehicle(int vehicleId) async {
+    final headers = await _authHeaders();
 
-  print("🔧 MECHANICS STATUS => ${response.statusCode}");
-  print("🔧 MECHANICS BODY => ${response.body}");
+    final response = await http.delete(
+      Uri.parse('${ApiConstants.vehicles}/$vehicleId'),
+      headers: headers,
+    );
 
-  if (response.statusCode == 200) {
-    final List data = jsonDecode(response.body);
-    return data.map((e) => Mechanic.fromJson(e)).toList();
-  } else {
-    throw Exception('Failed to load mechanics');
+    if (response.statusCode != 200 &&
+        response.statusCode != 204) {
+      throw _handleError(response);
+    }
   }
-}
 
-static Future<void> assignMechanic({
-  required int bookingId,
-  required int mechanicId,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  // ================= GARAGE SERVICES =================
 
-  final response = await http.put(
-    Uri.parse(
-      '${ApiConstants.bookings}/$bookingId/assign?mechanicId=$mechanicId',
-    ),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+  static Future<List<GarageService>> getGarageServices(
+      int garageId) async {
+    final headers = await _authHeaders();
 
-  if (response.statusCode != 200) {
-    throw Exception('Failed to assign mechanic');
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.garages}/$garageId/services'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data
+          .map((e) => GarageService.fromJson(e))
+          .toList();
+    } else {
+      throw _handleError(response);
+    }
   }
-}
-static Future<void> addGarageService({
-  required int garageId,
-  required String name,
-  required String description,
-  required double price,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.post(
-    Uri.parse('${ApiConstants.baseUrl}/garages/$garageId/services'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "name": name,
-      "description": description,
-      "price": price,
-    }),
-  );
+  static Future<void> addGarageService({
+    required int garageId,
+    required String name,
+    required String description,
+    required double price,
+  }) async {
+    final headers = await _authHeaders();
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to add service");
+    final response = await http.post(
+      Uri.parse(
+          '${ApiConstants.baseUrl}/garages/$garageId/services'),
+      headers: headers,
+      body: jsonEncode({
+        "name": name,
+        "description": description,
+        "price": price,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
   }
-}
-// ================= OWNER: UPDATE GARAGE SERVICE =================
-static Future<void> updateGarageService({
-  required int serviceId,
-  required String name,
-  required String description,
-  required double price,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.put(
-    Uri.parse('${ApiConstants.baseUrl}/garages/services/$serviceId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "name": name,
-      "description": description,
-      "price": price,
-    }),
-  );
+  static Future<void> updateGarageService({
+    required int serviceId,
+    required String name,
+    required String description,
+    required double price,
+  }) async {
+    final headers = await _authHeaders();
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to update service");
+    final response = await http.put(
+      Uri.parse(
+          '${ApiConstants.baseUrl}/garages/services/$serviceId'),
+      headers: headers,
+      body: jsonEncode({
+        "name": name,
+        "description": description,
+        "price": price,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
   }
-}
 
-// ================= OWNER: DEACTIVATE GARAGE SERVICE =================
-static Future<void> deactivateGarageService(int serviceId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  static Future<void> deactivateGarageService(
+      int serviceId) async {
+    final headers = await _authHeaders();
 
-  final response = await http.put(
-    Uri.parse(
-      '${ApiConstants.baseUrl}/garages/services/$serviceId/deactivate',
-    ),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+    final response = await http.put(
+      Uri.parse(
+          '${ApiConstants.baseUrl}/garages/services/$serviceId/deactivate'),
+      headers: headers,
+    );
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to deactivate service");
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
   }
-}
-// ================= OWNER: UPDATE ESTIMATED COST =================
-static Future<void> updateEstimatedCost({
-  required int bookingId,
-  required double estimatedCost,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.put(
-    Uri.parse('${ApiConstants.bookings}/$bookingId/estimated-cost'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "estimatedCost": estimatedCost,
-    }),
-  );
+  // ================= OWNER BOOKINGS =================
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to update estimated cost");
+  static Future<List<dynamic>> getBookingsByGarage(
+      int garageId) async {
+    final headers = await _authHeaders();
+
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.bookings}/garage/$garageId'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw _handleError(response);
+    }
   }
-}
 
-// ================= OWNER: UPDATE FINAL COST =================
-static Future<void> updateFinalCost({
-  required int bookingId,
-  required double finalCost,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  static Future<void> updateBookingStatus({
+    required int bookingId,
+    required String status,
+  }) async {
+    final headers = await _authHeaders();
 
-  final response = await http.put(
-    Uri.parse('${ApiConstants.bookings}/$bookingId/final-cost'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "finalCost": finalCost,
-    }),
-  );
+    final response = await http.put(
+      Uri.parse(
+          '${ApiConstants.bookings}/$bookingId/status'),
+      headers: headers,
+      body: jsonEncode({"status": status}),
+    );
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to update final cost");
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
   }
-}
-// ================= STRIPE PAYMENT =================
 
-static Future<Map<String, dynamic>> initiatePayment({
-  required int bookingId,
-  required double amount,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  static Future<void> assignMechanic({
+    required int bookingId,
+    required int mechanicId,
+  }) async {
+    final headers = await _authHeaders();
 
-  final response = await http.post(
-    Uri.parse('${ApiConstants.payments}/initiate/$bookingId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "amount": amount,
-      "method": "CARD",
-    }),
-  );
+    final response = await http.put(
+      Uri.parse(
+          '${ApiConstants.bookings}/$bookingId/assign?mechanicId=$mechanicId'),
+      headers: headers,
+    );
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception("Failed to initiate payment");
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
   }
-}
 
-static Future<void> confirmPayment({
-  required int bookingId,
-  required String transactionId,
-  required double amountPaid,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  static Future<List<Mechanic>> getMechanicsByGarage(
+      int garageId) async {
+    final headers = await _authHeaders();
 
-  final response = await http.put(
-    Uri.parse('${ApiConstants.payments}/confirm/$bookingId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "transactionId": transactionId,
-      "amountPaid": amountPaid,
-      "success": true,
-    }),
-  );
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.baseUrl}/mechanics/garage/$garageId'),
+      headers: headers,
+    );
 
-  if (response.statusCode != 200) {
-    throw Exception("Payment confirmation failed");
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data
+          .map((e) => Mechanic.fromJson(e))
+          .toList();
+    } else {
+      throw _handleError(response);
+    }
   }
-}
-// ================= CUSTOMER DASHBOARD =================
-static Future<Map<String, dynamic>> getCustomerDashboard() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.get(
-    Uri.parse('${ApiConstants.baseUrl}/dashboard/customer/me'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+  // ================= COST UPDATES =================
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception("Failed to load dashboard");
+  static Future<void> updateEstimatedCost({
+    required int bookingId,
+    required double estimatedCost,
+  }) async {
+    final headers = await _authHeaders();
+
+    final response = await http.put(
+      Uri.parse(
+          '${ApiConstants.bookings}/$bookingId/estimated-cost'),
+      headers: headers,
+      body: jsonEncode({
+        "estimatedCost": estimatedCost,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
   }
-}
 
-// ================= PAYMENT HISTORY =================
-static Future<List<dynamic>> getMyPayments() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  static Future<void> updateFinalCost({
+    required int bookingId,
+    required double finalCost,
+  }) async {
+    final headers = await _authHeaders();
 
-  final response = await http.get(
-    Uri.parse('${ApiConstants.payments}/me'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+    final response = await http.put(
+      Uri.parse(
+          '${ApiConstants.bookings}/$bookingId/final-cost'),
+      headers: headers,
+      body: jsonEncode({
+        "finalCost": finalCost,
+      }),
+    );
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception("Failed to load payments");
+    if (response.statusCode != 200) {
+      throw _handleError(response);
+    }
   }
-}
 
-// ================= DOWNLOAD INVOICE =================
-static Future<List<int>> downloadInvoice(int bookingId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  // ================= STRIPE PAYMENTS =================
 
-  final response = await http.get(
-    Uri.parse(
-        '${ApiConstants.payments}/invoice/$bookingId/download'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
+  static Future<Map<String, dynamic>> initiatePayment({
+    required int bookingId,
+    required double amount,
+  }) async {
+    final headers = await _authHeaders();
 
-  if (response.statusCode == 200) {
-    return response.bodyBytes;
-  } else {
-    throw Exception("Failed to download invoice");
+    final response = await http.post(
+      Uri.parse(
+          '${ApiConstants.payments}/initiate/$bookingId'),
+      headers: headers,
+      body: jsonEncode({
+        "amount": amount,
+        "method": "CARD",
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw _handleError(response);
+    }
   }
-}
-// ================= ADD VEHICLE =================
-static Future<void> addVehicle({
-  required String plateNumber,
-  required String make,
-  required String model,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
 
-  final response = await http.post(
-    Uri.parse(ApiConstants.vehicles),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      "plateNumber": plateNumber,
-      "make": make,
-      "model": model,
-    }),
-  );
+  static Future<Map<String, dynamic>> getPaymentStatus(
+      int bookingId) async {
+    final headers = await _authHeaders();
 
-  if (response.statusCode != 201 && response.statusCode != 200) {
-    print("❌ ADD VEHICLE FAILED => ${response.body}");
-    throw Exception("Failed to add vehicle");
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.payments}/status/$bookingId'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw _handleError(response);
+    }
   }
-}
 
-// ================= DELETE VEHICLE =================
-static Future<void> deleteVehicle(int vehicleId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  static Future<List<dynamic>> getMyPayments() async {
+    final headers = await _authHeaders();
 
-  final response = await http.delete(
-    Uri.parse('${ApiConstants.vehicles}/$vehicleId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+    final response = await http.get(
+      Uri.parse('${ApiConstants.payments}/me'),
+      headers: headers,
+    );
 
-  if (response.statusCode != 204 && response.statusCode != 200) {
-    print("❌ DELETE VEHICLE FAILED => ${response.body}");
-    throw Exception("Failed to delete vehicle");
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw _handleError(response);
+    }
   }
-}
 
+  static Future<List<int>> downloadInvoice(
+      int bookingId) async {
+    final headers = await _authHeaders();
 
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.payments}/invoice/$bookingId/download'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      throw _handleError(response);
+    }
+  }
 }

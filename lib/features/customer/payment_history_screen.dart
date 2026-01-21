@@ -149,28 +149,32 @@ class _PaymentHistoryScreenState
   // ================= UI HELPERS =================
 
   Widget _statusChip(String status) {
-    final isSuccess = status == "SUCCESS";
+    final isPaid = status == "SUCCESS" || status == "PAID";
 
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isSuccess
+        color: isPaid
             ? Colors.green.withOpacity(0.15)
             : Colors.orange.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSuccess ? Colors.green : Colors.orange,
+          color: isPaid ? Colors.green : Colors.orange,
         ),
       ),
       child: Text(
-        status,
+        isPaid ? "PAID" : status,
         style: TextStyle(
-          color: isSuccess ? Colors.green : Colors.orange,
+          color: isPaid ? Colors.green : Colors.orange,
           fontWeight: FontWeight.bold,
         ),
       ),
     );
+  }
+
+  bool _canDownloadInvoice(String status) {
+    return status == "SUCCESS" || status == "PAID";
   }
 
   // ================= UI =================
@@ -208,6 +212,7 @@ class _PaymentHistoryScreenState
             itemCount: payments.length,
             itemBuilder: (context, index) {
               final p = payments[index];
+              final status = p["status"] ?? "UNKNOWN";
 
               return Card(
                 margin: const EdgeInsets.all(10),
@@ -227,7 +232,7 @@ class _PaymentHistoryScreenState
 
                       Row(
                         children: [
-                          _statusChip(p["status"]),
+                          _statusChip(status),
                           const SizedBox(width: 10),
                           Text(
                             "Method: ${p["method"] ?? "CARD"}",
@@ -250,7 +255,7 @@ class _PaymentHistoryScreenState
                     ],
                   ),
 
-                  trailing: p["status"] == "SUCCESS"
+                  trailing: _canDownloadInvoice(status)
                       ? ElevatedButton.icon(
                           icon: const Icon(Icons.receipt),
                           label: const Text("Invoice"),
