@@ -20,6 +20,16 @@ class _AddGarageScreenState extends State<AddGarageScreen> {
 
   bool _loading = false;
 
+  InputDecoration _decoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -44,7 +54,7 @@ class _AddGarageScreenState extends State<AddGarageScreen> {
     setState(() => _loading = false);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      Navigator.pop(context, true); // ✅ success
+      Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to add garage")),
@@ -64,29 +74,37 @@ class _AddGarageScreenState extends State<AddGarageScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: "Garage Name"),
+                decoration: _decoration("Garage Name", Icons.garage),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _addressController,
-                decoration: const InputDecoration(labelText: "Address"),
+                decoration: _decoration("Address", Icons.location_on),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
-                decoration: const InputDecoration(labelText: "Phone"),
+                decoration: _decoration("Phone", Icons.phone),
                 keyboardType: TextInputType.phone,
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: _loading ? null : _submit,
-                child: _loading
-                    ? const CircularProgressIndicator()
-                    : const Text("Create Garage"),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _loading
+                      ? const CircularProgressIndicator()
+                      : const Text("Create Garage"),
+                ),
               ),
             ],
           ),

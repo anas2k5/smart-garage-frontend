@@ -14,12 +14,18 @@ class Garage {
   });
 
   factory Garage.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'] ?? json['garageId'];
+
+    if (rawId == null) {
+      throw Exception("Garage JSON missing id field: $json");
+    }
+
     return Garage(
-      id: json['id'],
-      name: json['name'],
-      address: json['address'],
-      phone: json['phone'],
-      active: json['active'],
+      id: rawId is int ? rawId : int.parse(rawId.toString()),
+      name: json['name'] ?? '',
+      address: json['address'] ?? '',
+      phone: json['phone'] ?? '',
+      active: json['active'] ?? true,
     );
   }
 }

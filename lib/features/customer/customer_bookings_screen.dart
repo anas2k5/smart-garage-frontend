@@ -5,7 +5,7 @@ import 'booking_details_screen.dart';
 import '../payments/payment_screen.dart';
 
 class CustomerBookingsScreen extends StatefulWidget {
-  final String? statusFilter; // ✅ NEW
+  final String? statusFilter;
 
   const CustomerBookingsScreen({
     super.key,
@@ -185,7 +185,7 @@ class _CustomerBookingsScreenState
 
                           const SizedBox(height: 6),
                           Text(
-                            booking.garageName,
+                            booking.garageNameSafe,
                             style:
                                 const TextStyle(
                                     color: Colors
@@ -194,7 +194,7 @@ class _CustomerBookingsScreenState
 
                           const SizedBox(height: 6),
                           Text(
-                            "Service: ${booking.serviceType ?? 'Not assigned'}",
+                            "Service: ${booking.serviceTypeSafe}",
                           ),
 
                           const SizedBox(height: 6),

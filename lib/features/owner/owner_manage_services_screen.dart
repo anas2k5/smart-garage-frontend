@@ -31,7 +31,8 @@ class _OwnerManageServicesScreenState
     setState(_load);
   }
 
-  // ================= ADD / EDIT SERVICE DIALOG =================
+  // ================= SERVICE DIALOG =================
+
   void _openServiceDialog({GarageService? service}) {
     final nameCtrl =
         TextEditingController(text: service?.name ?? '');
@@ -43,22 +44,30 @@ class _OwnerManageServicesScreenState
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: Text(service == null ? "Add Service" : "Edit Service"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Name"),
+              decoration: const InputDecoration(labelText: "Service Name"),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: descCtrl,
               decoration: const InputDecoration(labelText: "Description"),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: priceCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Price"),
+              decoration: const InputDecoration(
+                labelText: "Price",
+                prefixText: "₹ ",
+              ),
             ),
           ],
         ),
@@ -69,21 +78,25 @@ class _OwnerManageServicesScreenState
           ),
           ElevatedButton(
             onPressed: () async {
+              final price = double.tryParse(priceCtrl.text);
+              if (price == null) return;
+
               if (service == null) {
                 await ApiService.addGarageService(
                   garageId: widget.garage.id,
                   name: nameCtrl.text,
                   description: descCtrl.text,
-                  price: double.parse(priceCtrl.text),
+                  price: price,
                 );
               } else {
                 await ApiService.updateGarageService(
                   serviceId: service.id,
                   name: nameCtrl.text,
                   description: descCtrl.text,
-                  price: double.parse(priceCtrl.text),
+                  price: price,
                 );
               }
+
               Navigator.pop(context);
               _reload();
             },
@@ -94,11 +107,15 @@ class _OwnerManageServicesScreenState
     );
   }
 
-  // ================= CONFIRM DEACTIVATE =================
+  // ================= DEACTIVATE =================
+
   void _confirmDeactivate(GarageService service) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: const Text("Deactivate Service"),
         content: Text(
           "Are you sure you want to deactivate '${service.name}'?\n\nCustomers will no longer see this service.",
@@ -124,13 +141,16 @@ class _OwnerManageServicesScreenState
     );
   }
 
+  // ================= UI =================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Manage Services")),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openServiceDialog(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text("Add Service"),
       ),
       body: FutureBuilder<List<GarageService>>(
         future: _future,
@@ -150,18 +170,25 @@ class _OwnerManageServicesScreenState
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.all(12),
             itemCount: services.length,
             itemBuilder: (_, i) {
               final s = services[i];
 
               return Card(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                elevation: 3,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: ListTile(
-                  title: Text(s.name),
-                  subtitle: Text("₹${s.price}"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  title: Text(
+                    s.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text("₹${s.price.toStringAsFixed(2)}"),
+                  trailing: Wrap(
+                    spacing: 8,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit),
@@ -169,7 +196,8 @@ class _OwnerManageServicesScreenState
                             _openServiceDialog(service: s),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.block, color: Colors.red),
+                        icon:
+                            const Icon(Icons.block, color: Colors.red),
                         onPressed: () => _confirmDeactivate(s),
                       ),
                     ],

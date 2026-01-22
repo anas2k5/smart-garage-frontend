@@ -33,6 +33,8 @@ class _OwnerGarageBookingsScreenState
         .then((list) => list.map((e) => Booking.fromJson(e)).toList());
   }
 
+  // ================= UI HELPERS =================
+
   Color _statusColor(String status) {
     switch (status) {
       case 'PENDING':
@@ -43,12 +45,37 @@ class _OwnerGarageBookingsScreenState
         return Colors.purple;
       case 'COMPLETED':
         return Colors.green;
+      case 'PAID':
+        return Colors.teal;
       case 'CANCELLED':
         return Colors.red;
       default:
         return Colors.grey;
     }
   }
+
+  Widget _statusChip(String status) {
+    final color = _statusColor(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color),
+      ),
+      child: Text(
+        status.replaceAll("_", " "),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  // ================= API ACTIONS =================
 
   Future<void> _updateStatus(int bookingId, String status) async {
     await ApiService.updateBookingStatus(
@@ -58,35 +85,46 @@ class _OwnerGarageBookingsScreenState
     setState(_loadBookings);
   }
 
-  // ================= ASSIGN MECHANIC =================
+  // ================= MECHANIC =================
+
   void _openAssignMechanicSheet(Booking booking) async {
     final List<Mechanic> mechanics =
         await ApiService.getMechanicsByGarage(widget.garage.id);
 
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) {
         if (mechanics.isEmpty) {
           return const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(24),
             child: Text("No mechanics available"),
           );
         }
 
         return ListView(
+          padding: const EdgeInsets.all(12),
           children: mechanics.map((m) {
-            return ListTile(
-              title: Text(m.name),
-              subtitle: Text(m.phone),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                await ApiService.assignMechanic(
-                  bookingId: booking.id,
-                  mechanicId: m.id,
-                );
-                Navigator.pop(context);
-                setState(_loadBookings);
-              },
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.engineering),
+                title: Text(m.name),
+                subtitle: Text(m.phone),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  await ApiService.assignMechanic(
+                    bookingId: booking.id,
+                    mechanicId: m.id,
+                  );
+                  Navigator.pop(context);
+                  setState(_loadBookings);
+                },
+              ),
             );
           }).toList(),
         );
@@ -94,18 +132,32 @@ class _OwnerGarageBookingsScreenState
     );
   }
 
-  // ================= ESTIMATED COST =================
-  void _openEstimatedCostDialog(Booking booking) {
-    final ctrl = TextEditingController();
+  // ================= COST DIALOG =================
+
+  void _openCostDialog({
+    required Booking booking,
+    required bool isFinal,
+  }) {
+    final ctrl = TextEditingController(
+      text: isFinal
+          ? booking.finalCost?.toString() ?? ""
+          : booking.estimatedCost?.toString() ?? "",
+    );
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Set Estimated Cost"),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(isFinal ? "Set Final Cost" : "Set Estimated Cost"),
         content: TextField(
           controller: ctrl,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: "Estimated Cost"),
+          decoration: const InputDecoration(
+            prefixText: "₹ ",
+            labelText: "Amount",
+          ),
         ),
         actions: [
           TextButton(
@@ -114,10 +166,21 @@ class _OwnerGarageBookingsScreenState
           ),
           ElevatedButton(
             onPressed: () async {
-              await ApiService.updateEstimatedCost(
-                bookingId: booking.id,
-                estimatedCost: double.parse(ctrl.text),
-              );
+              final value = double.tryParse(ctrl.text);
+              if (value == null) return;
+
+              if (isFinal) {
+                await ApiService.updateFinalCost(
+                  bookingId: booking.id,
+                  finalCost: value,
+                );
+              } else {
+                await ApiService.updateEstimatedCost(
+                  bookingId: booking.id,
+                  estimatedCost: value,
+                );
+              }
+
               Navigator.pop(context);
               setState(_loadBookings);
             },
@@ -128,39 +191,93 @@ class _OwnerGarageBookingsScreenState
     );
   }
 
-  // ================= FINAL COST =================
-  void _openFinalCostDialog(Booking booking) {
-    final ctrl = TextEditingController();
+  // ================= ACTIONS BAR =================
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Set Final Cost"),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: "Final Cost"),
+  Widget _actions(Booking b) {
+    final List<Widget> buttons = [];
+
+    if (b.status == 'PENDING') {
+      buttons.addAll([
+        TextButton(
+          onPressed: () => _updateStatus(b.id, 'CANCELLED'),
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: const Text("Reject"),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+        ElevatedButton(
+          onPressed: () => _updateStatus(b.id, 'ACCEPTED'),
+          child: const Text("Accept"),
+        ),
+      ]);
+    }
+
+    if (b.status == 'ACCEPTED' && b.mechanicName == null) {
+      buttons.add(
+        ElevatedButton(
+          onPressed: () => _openAssignMechanicSheet(b),
+          child: const Text("Assign Mechanic"),
+        ),
+      );
+    }
+
+    if (b.status == 'ACCEPTED' &&
+        b.mechanicName != null &&
+        b.estimatedCost == null) {
+      buttons.add(
+        ElevatedButton(
+          onPressed: () => _openCostDialog(
+            booking: b,
+            isFinal: false,
           ),
-          ElevatedButton(
-            onPressed: () async {
-              await ApiService.updateFinalCost(
-                bookingId: booking.id,
-                finalCost: double.parse(ctrl.text),
-              );
-              Navigator.pop(context);
-              setState(_loadBookings);
-            },
-            child: const Text("Save"),
+          child: const Text("Add Estimate"),
+        ),
+      );
+    }
+
+    if (b.status == 'ACCEPTED' && b.estimatedCost != null) {
+      buttons.add(
+        ElevatedButton(
+          onPressed: () => _updateStatus(b.id, 'IN_PROGRESS'),
+          child: const Text("Start Work"),
+        ),
+      );
+    }
+
+    if (b.status == 'IN_PROGRESS' && b.finalCost == null) {
+      buttons.add(
+        ElevatedButton(
+          onPressed: () => _openCostDialog(
+            booking: b,
+            isFinal: true,
           ),
-        ],
+          child: const Text("Add Final Cost"),
+        ),
+      );
+    }
+
+    if (b.status == 'IN_PROGRESS' && b.finalCost != null) {
+      buttons.add(
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+          ),
+          onPressed: () => _updateStatus(b.id, 'COMPLETED'),
+          child: const Text("Mark Completed"),
+        ),
+      );
+    }
+
+    if (buttons.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Wrap(
+        spacing: 8,
+        children: buttons,
       ),
     );
   }
+
+  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
@@ -210,167 +327,69 @@ class _OwnerGarageBookingsScreenState
             }
 
             return ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(12),
               itemCount: bookings.length,
               itemBuilder: (context, index) {
                 final b = bookings[index];
 
                 return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  elevation: 3,
+                  elevation: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Booking #${b.id}",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text("Vehicle: ${b.vehiclePlate}"),
-                        Text("Customer: ${b.customerEmail ?? 'N/A'}"),
-                        Text("Service: ${b.serviceType ?? 'Not assigned'}"),
-                        const SizedBox(height: 6),
-
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Status: "),
                             Text(
-                              b.status,
-                              style: TextStyle(
-                                color: _statusColor(b.status),
+                              "Booking #${b.id}",
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
+                            _statusChip(b.status),
                           ],
                         ),
 
+                        const SizedBox(height: 8),
+
+                        Text("Vehicle: ${b.vehiclePlateSafe}"),
+                        Text("Customer: ${b.customerEmailSafe}"),
+                        Text("Service: ${b.serviceTypeSafe}"),
+
                         if (b.estimatedCost != null)
-                          Text("Estimated Cost: ₹${b.estimatedCost}"),
+                          Text(
+                            "Estimated: ₹${b.estimatedCost!.toStringAsFixed(2)}",
+                            style: const TextStyle(color: Colors.orange),
+                          ),
 
                         if (b.finalCost != null)
                           Text(
-                            "Final Cost: ₹${b.finalCost}",
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-
-                        // 🔥 PENDING
-                        if (b.status == 'PENDING') ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton(
-                                onPressed: () =>
-                                    _updateStatus(b.id, 'CANCELLED'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                ),
-                                child: const Text("Reject"),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    _updateStatus(b.id, 'ACCEPTED'),
-                                child: const Text("Accept"),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        // 🔧 ASSIGN MECHANIC
-                        if (b.status == 'ACCEPTED' &&
-                            b.mechanicName == null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _openAssignMechanicSheet(b),
-                              child: const Text("Assign Mechanic"),
-                            ),
-                          ),
-                        ],
-
-                        // 💰 ADD ESTIMATED COST
-                        if (b.status == 'ACCEPTED' &&
-                            b.mechanicName != null &&
-                            b.estimatedCost == null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _openEstimatedCostDialog(b),
-                              child: const Text("Add Estimated Cost"),
-                            ),
-                          ),
-                        ],
-
-                        // ▶ START WORK
-                        if (b.status == 'ACCEPTED' &&
-                            b.estimatedCost != null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _updateStatus(b.id, 'IN_PROGRESS'),
-                              child: const Text("Start Work"),
-                            ),
-                          ),
-                        ],
-
-                        // 🧾 ADD FINAL COST
-                        if (b.status == 'IN_PROGRESS' &&
-                            b.finalCost == null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _openFinalCostDialog(b),
-                              child: const Text("Add Final Cost"),
-                            ),
-                          ),
-                        ],
-
-                        // ✅ COMPLETE
-                        if (b.status == 'IN_PROGRESS' &&
-                            b.finalCost != null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                              ),
-                              onPressed: () =>
-                                  _updateStatus(b.id, 'COMPLETED'),
-                              child: const Text("Mark Completed"),
-                            ),
-                          ),
-                        ],
-
-                        // 👨‍🔧 MECHANIC INFO
-                        if (b.mechanicName != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            "Mechanic: ${b.mechanicName} (${b.mechanicPhone})",
+                            "Final: ₹${b.finalCost!.toStringAsFixed(2)}",
                             style: const TextStyle(
-                              fontWeight: FontWeight.w500,
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
+
+                        if (b.mechanicName != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              "Mechanic: ${b.mechanicNameSafe} (${b.mechanicPhoneSafe})",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                        _actions(b),
                       ],
                     ),
                   ),

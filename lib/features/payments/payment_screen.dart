@@ -144,11 +144,10 @@ class _PaymentScreenState
               _infoRow("Booking ID",
                   "#${widget.booking.id}"),
               _infoRow("Garage",
-                  widget.booking.garageName),
+                  widget.booking.garageNameSafe),
               _infoRow(
                 "Service",
-                widget.booking.serviceType ??
-                    "Service",
+                widget.booking.serviceTypeSafe,
               ),
 
               const SizedBox(height: 60),

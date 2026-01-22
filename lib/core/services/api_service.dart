@@ -536,5 +536,21 @@ static Future<void> register({
     throw _handleError(response);
   }
 }
+// ================= OWNER DASHBOARD =================
+
+static Future<Map<String, dynamic>> getOwnerDashboard() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/dashboard/owner/me'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
 
 }
