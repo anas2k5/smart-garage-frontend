@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
@@ -26,9 +27,10 @@ class _OwnerDashboardScreenState
   void initState() {
     super.initState();
     _future = ApiService.getOwnerDashboard();
-    _animController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
-          ..forward();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
   }
 
   @override
@@ -37,9 +39,12 @@ class _OwnerDashboardScreenState
     super.dispose();
   }
 
+  // ================= LOGOUT =================
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+
+    if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
@@ -48,7 +53,7 @@ class _OwnerDashboardScreenState
     );
   }
 
-  // ---------------- UI HELPERS ----------------
+  // ================= UI HELPERS =================
 
   Widget _statCard({
     required IconData icon,
@@ -60,7 +65,10 @@ class _OwnerDashboardScreenState
     return Expanded(
       child: ScaleTransition(
         scale: Tween(begin: 0.9, end: 1.0).animate(
-          CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+          CurvedAnimation(
+            parent: _animController,
+            curve: Curves.easeOutBack,
+          ),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
@@ -70,6 +78,7 @@ class _OwnerDashboardScreenState
             decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: color.withOpacity(0.4)),
               boxShadow: [
                 BoxShadow(
                   color: color.withOpacity(0.15),
@@ -77,7 +86,6 @@ class _OwnerDashboardScreenState
                   offset: const Offset(0, 6),
                 ),
               ],
-              border: Border.all(color: color.withOpacity(0.4)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +130,8 @@ class _OwnerDashboardScreenState
       case "COMPLETED":
         return Colors.green;
       case "PAID":
-        return Colors.teal;
+      case "SUCCESS":
+        return Colors.green;
       case "CANCELLED":
         return Colors.red;
       default:
@@ -130,8 +139,10 @@ class _OwnerDashboardScreenState
     }
   }
 
+  // ================= RECENT BOOKING TILE =================
   Widget _recentBookingTile(Map<String, dynamic> json) {
     late Booking booking;
+
     try {
       booking = Booking.fromJson(json);
     } catch (_) {
@@ -141,7 +152,9 @@ class _OwnerDashboardScreenState
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: ListTile(
         title: Text(
           "Booking #${booking.id}",
@@ -154,25 +167,75 @@ class _OwnerDashboardScreenState
             Text("Garage: ${booking.garageNameSafe}"),
             Text("Service: ${booking.serviceTypeSafe}"),
             const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _statusColor(booking.status).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: _statusColor(booking.status),
-                ),
-              ),
-              child: Text(
-                booking.status,
-                style: TextStyle(
-                  color: _statusColor(booking.status),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+            _statusChip(booking.status),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= RECENT PAYMENT TILE =================
+  Widget _recentPaymentTile(Map<String, dynamic> p) {
+    final paidAt = p["paidAt"] != null
+        ? DateFormat("dd MMM yyyy, hh:mm a")
+            .format(DateTime.parse(p["paidAt"]))
+        : "—";
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.green.withOpacity(0.15),
+          child: const Icon(Icons.payments, color: Colors.green),
+        ),
+        title: Text(
+          "₹ ${p["amount"] ?? "0"}",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text("Garage: ${p["garageName"] ?? "—"}"),
+            Text("Customer: ${p["customerEmail"] ?? "—"}"),
+            Text("Method: ${p["method"] ?? "CARD"}"),
+            Text(
+              "Paid: $paidAt",
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
               ),
             ),
           ],
+        ),
+        trailing: _statusChip("PAID"),
+      ),
+    );
+  }
+
+  Widget _statusChip(String status) {
+    final color = _statusColor(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
       ),
     );
@@ -182,8 +245,7 @@ class _OwnerDashboardScreenState
     return "₹ ${v.toStringAsFixed(0)}";
   }
 
-  // ---------------- UI ----------------
-
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -211,8 +273,13 @@ class _OwnerDashboardScreenState
           final activeGarages = data["activeGarages"] ?? 0;
           final totalBookings = data["totalBookings"] ?? 0;
           final pendingBookings = data["pendingBookings"] ?? 0;
-          final revenueValue = (data["totalRevenue"] ?? 0).toDouble();
-          final recentBookings = (data["recentBookings"] as List? ?? []);
+          final revenueValue =
+              (data["totalRevenue"] ?? 0).toDouble();
+
+          final recentBookings =
+              (data["recentBookings"] as List? ?? []);
+          final recentPayments =
+              (data["recentPayments"] as List? ?? []);
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -223,7 +290,7 @@ class _OwnerDashboardScreenState
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Welcome Card
+                // ================= WELCOME =================
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -232,13 +299,14 @@ class _OwnerDashboardScreenState
                   child: const ListTile(
                     leading: CircleAvatar(child: Icon(Icons.person)),
                     title: Text("Welcome Owner 👋"),
-                    subtitle:
-                        Text("Manage your garages and bookings efficiently"),
+                    subtitle: Text(
+                        "Manage your garages and bookings efficiently"),
                   ),
                 ),
 
                 const SizedBox(height: 20),
 
+                // ================= STATS ROW 1 =================
                 Row(
                   children: [
                     _statCard(
@@ -250,7 +318,8 @@ class _OwnerDashboardScreenState
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const OwnerGaragesScreen(),
+                            builder: (_) =>
+                                const OwnerGaragesScreen(),
                           ),
                         );
                       },
@@ -276,6 +345,7 @@ class _OwnerDashboardScreenState
 
                 const SizedBox(height: 14),
 
+                // ================= STATS ROW 2 =================
                 Row(
                   children: [
                     _statCard(
@@ -288,7 +358,9 @@ class _OwnerDashboardScreenState
                           context,
                           MaterialPageRoute(
                             builder: (_) =>
-                                const OwnerAllBookingsScreen(filter: "PENDING"),
+                                const OwnerAllBookingsScreen(
+                                  filter: "PENDING",
+                                ),
                           ),
                         );
                       },
@@ -305,48 +377,60 @@ class _OwnerDashboardScreenState
 
                 const SizedBox(height: 28),
 
+                // ================= QUICK ACTIONS =================
                 const Text(
                   "Quick Actions",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+                const SizedBox(height: 12),
 
-                const SizedBox(height: 10),
-
-                ListTile(
-                  leading: const Icon(Icons.garage),
-                  title: const Text("My Garages"),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const OwnerGaragesScreen(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _quickActionCard(
+                        icon: Icons.garage,
+                        label: "My Garages",
+                        color: Colors.indigo,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const OwnerGaragesScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-
-                ListTile(
-                  leading: const Icon(Icons.add_business),
-                  title: const Text("Add Garage"),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddGarageScreen(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _quickActionCard(
+                        icon: Icons.add_business,
+                        label: "Add Garage",
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const AddGarageScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
+                // ================= RECENT BOOKINGS =================
                 const Text(
                   "Recent Bookings",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-
                 const SizedBox(height: 8),
 
                 if (recentBookings.isEmpty)
@@ -358,10 +442,72 @@ class _OwnerDashboardScreenState
                   ...recentBookings
                       .map((e) => _recentBookingTile(e))
                       .toList(),
+
+                const SizedBox(height: 28),
+
+                // ================= RECENT PAYMENTS =================
+                const Text(
+                  "Recent Payments",
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+
+                if (recentPayments.isEmpty)
+                  const Text(
+                    "No recent payments",
+                    style: TextStyle(color: Colors.grey),
+                  )
+                else
+                  ...recentPayments
+                      .map((p) => _recentPaymentTile(p))
+                      .toList(),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  // ================= QUICK ACTION CARD =================
+  Widget _quickActionCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withOpacity(0.4)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.15),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
