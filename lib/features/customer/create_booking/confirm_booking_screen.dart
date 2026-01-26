@@ -34,8 +34,7 @@ class _ConfirmBookingScreenState
         garageId: widget.garage.id,
         vehicleId: widget.vehicle.id,
         serviceId: widget.service.id,
-        bookingTime:
-            DateTime.now().add(const Duration(hours: 2)),
+        bookingTime: DateTime.now().add(const Duration(hours: 2)),
         details: "Booked via mobile app",
       );
 
@@ -43,23 +42,22 @@ class _ConfirmBookingScreenState
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content:
-                Text("✅ Booking created successfully")),
+          content: Text("✅ Booking created successfully"),
+        ),
       );
 
-      Navigator.pushAndRemoveUntil(
+      // ✅ FIXED NAVIGATION — preserves back stack
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              const CustomerBookingsScreen(),
+          builder: (_) => const CustomerBookingsScreen(),
         ),
-        (_) => false,
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content:
-                Text("❌ Failed to create booking")),
+          content: Text("❌ Failed to create booking"),
+        ),
       );
     } finally {
       if (mounted) {
@@ -104,7 +102,8 @@ class _ConfirmBookingScreenState
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14)),
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Colors.deepPurple,
@@ -115,8 +114,7 @@ class _ConfirmBookingScreenState
           value,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style:
-              const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -125,8 +123,9 @@ class _ConfirmBookingScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(title: const Text("Confirm Booking")),
+      appBar: AppBar(
+        title: const Text("Confirm Booking"),
+      ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -145,8 +144,7 @@ class _ConfirmBookingScreenState
                       ),
                     )
                   : const Text("Confirm Booking"),
-              onPressed:
-                  _loading ? null : _confirmBooking,
+              onPressed: _loading ? null : _confirmBooking,
             ),
           ),
         ),
@@ -159,15 +157,26 @@ class _ConfirmBookingScreenState
               _stepHeader(),
               const SizedBox(height: 20),
 
-              _infoTile(Icons.store, "Garage",
-                  widget.garage.name),
-              _infoTile(Icons.directions_car,
-                  "Vehicle",
-                  widget.vehicle.plateNumber),
-              _infoTile(Icons.build, "Service",
-                  widget.service.name),
-              _infoTile(Icons.payments, "Price",
-                  "₹ ${widget.service.price}"),
+              _infoTile(
+                Icons.store,
+                "Garage",
+                widget.garage.name,
+              ),
+              _infoTile(
+                Icons.directions_car,
+                "Vehicle",
+                widget.vehicle.plateNumber,
+              ),
+              _infoTile(
+                Icons.build,
+                "Service",
+                widget.service.name,
+              ),
+              _infoTile(
+                Icons.payments,
+                "Price",
+                "₹ ${widget.service.price}",
+              ),
             ],
           ),
         ),

@@ -2,11 +2,14 @@ import 'package:intl/intl.dart';
 
 class Booking {
   final int id;
+
+  // Service status
   final String status;
 
-  final String? serviceType;
+  // 🔥 NEW — Payment status
+  final String paymentStatus;
 
-  // Raw backend value
+  final String? serviceType;
   final DateTime bookingTime;
 
   final String? garageName;
@@ -24,6 +27,7 @@ class Booking {
   Booking({
     required this.id,
     required this.status,
+    required this.paymentStatus,
     this.serviceType,
     required this.bookingTime,
     this.garageName,
@@ -37,7 +41,7 @@ class Booking {
   });
 
   // ----------------------------
-  // SAFE UI GETTERS (🔥 FIXES ALL YOUR ERRORS)
+  // SAFE UI GETTERS
   // ----------------------------
 
   String get garageNameSafe =>
@@ -59,7 +63,7 @@ class Booking {
       mechanicPhone?.isNotEmpty == true ? mechanicPhone! : "—";
 
   // ----------------------------
-  // DATE FORMATTER (🔥 FIXES DateTime → String error)
+  // DATE FORMATTER
   // ----------------------------
   String get bookingTimeFormatted {
     return DateFormat("dd MMM yyyy, hh:mm a")
@@ -67,12 +71,13 @@ class Booking {
   }
 
   // ----------------------------
-  // JSON MAPPER (MATCHES BACKEND DTO)
+  // JSON MAPPER
   // ----------------------------
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
       id: json['id'],
       status: json['status'],
+      paymentStatus: json['paymentStatus'] ?? "PENDING",
       serviceType: json['serviceType'],
       bookingTime: DateTime.parse(json['bookingTime']),
       garageName: json['garageName'],

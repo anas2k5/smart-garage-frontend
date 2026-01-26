@@ -57,14 +57,28 @@ class _CustomerBookingsScreenState
         .toList();
   }
 
+  // ✅ SAFE BACK NAVIGATION (NO ROLE NAVIGATOR)
+  void _handleBack(BuildContext context) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      // Fallback: Go to root of app safely
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/',
+        (route) => false,
+      );
+    }
+  }
+
   // ✅ CANCEL CONFIRMATION
-  Future<void> _confirmCancel(BuildContext context, int bookingId) async {
+  Future<void> _confirmCancel(
+      BuildContext context, int bookingId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Cancel Booking"),
-        content:
-            const Text("Are you sure you want to cancel this booking?"),
+        content: const Text(
+            "Are you sure you want to cancel this booking?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -94,7 +108,13 @@ class _CustomerBookingsScreenState
         : "${widget.statusFilter} Bookings";
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => _handleBack(context),
+        ),
+      ),
       body: RefreshIndicator(
         onRefresh: () async => _reload(),
         child: FutureBuilder<List<Booking>>(
@@ -103,7 +123,8 @@ class _CustomerBookingsScreenState
             if (snapshot.connectionState ==
                 ConnectionState.waiting) {
               return const Center(
-                  child: CircularProgressIndicator());
+                child: CircularProgressIndicator(),
+              );
             }
 
             if (snapshot.hasError) {
@@ -132,10 +153,9 @@ class _CustomerBookingsScreenState
               itemBuilder: (context, index) {
                 final booking = bookings[index];
 
-                final bool isPaid =
-                    booking.status == 'PAID';
-                final bool isCompleted =
-                    booking.status == 'COMPLETED';
+             final bool isCompleted = booking.status == 'COMPLETED';
+final bool isPaid = booking.paymentStatus == 'SUCCESS';
+
                 final bool canCancel =
                     booking.status == 'PENDING' ||
                         booking.status == 'ACCEPTED';
@@ -149,47 +169,43 @@ class _CustomerBookingsScreenState
                       MaterialPageRoute(
                         builder: (_) =>
                             BookingDetailsScreen(
-                                booking: booking),
+                          booking: booking,
+                        ),
                       ),
                     );
                   },
                   child: Card(
-                    margin:
-                        const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     elevation: 3,
-                    shape:
-                        RoundedRectangleBorder(
+                    shape: RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(
-                              12),
+                          BorderRadius.circular(12),
                     ),
                     child: Padding(
                       padding:
                           const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                            CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Booking #${booking.id}",
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight:
-                                  FontWeight
-                                      .bold,
+                                  FontWeight.bold,
                             ),
                           ),
 
                           const SizedBox(height: 6),
                           Text(
                             booking.garageNameSafe,
-                            style:
-                                const TextStyle(
-                                    color: Colors
-                                        .black54),
+                            style: const TextStyle(
+                              color: Colors.black54,
+                            ),
                           ),
 
                           const SizedBox(height: 6),
@@ -200,18 +216,14 @@ class _CustomerBookingsScreenState
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Text(
-                                  "Status: "),
+                              const Text("Status: "),
                               Text(
                                 booking.status,
                                 style: TextStyle(
-                                  color:
-                                      _statusColor(
-                                          booking
-                                              .status),
+                                  color: _statusColor(
+                                      booking.status),
                                   fontWeight:
-                                      FontWeight
-                                          .bold,
+                                      FontWeight.bold,
                                 ),
                               ),
                             ],
@@ -224,42 +236,31 @@ class _CustomerBookingsScreenState
 
                           // ✅ PAID BADGE
                           if (isPaid) ...[
-                            const SizedBox(
-                                height: 8),
+                            const SizedBox(height: 8),
                             Align(
                               alignment:
-                                  Alignment
-                                      .centerRight,
+                                  Alignment.centerRight,
                               child: Container(
                                 padding:
-                                    const EdgeInsets
-                                        .symmetric(
+                                    const EdgeInsets.symmetric(
                                   horizontal: 10,
                                   vertical: 4,
                                 ),
                                 decoration:
                                     BoxDecoration(
-                                  color: Colors
-                                      .green
-                                      .withOpacity(
-                                          0.15),
+                                  color: Colors.green
+                                      .withOpacity(0.15),
                                   borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                              20),
+                                      BorderRadius.circular(20),
                                   border: Border.all(
-                                      color: Colors
-                                          .green),
+                                      color: Colors.green),
                                 ),
                                 child: const Text(
                                   "PAID",
-                                  style:
-                                      TextStyle(
-                                    color: Colors
-                                        .green,
+                                  style: TextStyle(
+                                    color: Colors.green,
                                     fontWeight:
-                                        FontWeight
-                                            .bold,
+                                        FontWeight.bold,
                                   ),
                                 ),
                               ),
@@ -268,40 +269,31 @@ class _CustomerBookingsScreenState
 
                           // 💳 PAY NOW
                           if (isCompleted &&
-                              booking.finalCost !=
-                                  null &&
+                              booking.finalCost != null &&
                               !isPaid) ...[
-                            const SizedBox(
-                                height: 10),
+                            const SizedBox(height: 10),
                             Align(
                               alignment:
-                                  Alignment
-                                      .centerRight,
+                                  Alignment.centerRight,
                               child:
-                                  ElevatedButton
-                                      .icon(
+                                  ElevatedButton.icon(
                                 icon: const Icon(
                                     Icons.payment),
                                 label: const Text(
                                     "Pay Now"),
-                                onPressed:
-                                    () async {
+                                onPressed: () async {
                                   final paid =
-                                      await Navigator
-                                          .push(
+                                      await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder:
-                                          (_) =>
-                                              PaymentScreen(
-                                        booking:
-                                            booking,
+                                      builder: (_) =>
+                                          PaymentScreen(
+                                        booking: booking,
                                       ),
                                     ),
                                   );
 
-                                  if (paid ==
-                                      true) {
+                                  if (paid == true) {
                                     _reload();
                                   }
                                 },
@@ -311,25 +303,20 @@ class _CustomerBookingsScreenState
 
                           // 🔥 CANCEL BUTTON
                           if (canCancel &&
-                              booking.status !=
-                                  'PAID' &&
-                              booking.status !=
-                                  'CANCELLED') ...[
-                            const SizedBox(
-                                height: 10),
+                              booking.status != 'PAID' &&
+                              booking.status != 'CANCELLED') ...[
+                            const SizedBox(height: 10),
                             Align(
                               alignment:
-                                  Alignment
-                                      .centerRight,
+                                  Alignment.centerRight,
                               child: TextButton(
                                 style: TextButton
                                     .styleFrom(
                                   foregroundColor:
                                       Colors.red,
                                 ),
-                                onPressed:
-                                    () =>
-                                        _confirmCancel(
+                                onPressed: () =>
+                                    _confirmCancel(
                                   context,
                                   booking.id,
                                 ),
