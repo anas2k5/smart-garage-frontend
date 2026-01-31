@@ -552,5 +552,75 @@ static Future<Map<String, dynamic>> getOwnerDashboard() async {
     throw _handleError(response);
   }
 }
+// ================= ADMIN DASHBOARD =================
+static Future<Map<String, dynamic>> getAdminDashboard() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/dashboard/admin/me'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
+static Future<List<dynamic>> getAllUsers() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/admin/users'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
+static Future<List<dynamic>> getAllGaragesAdmin() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/admin/garages'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
+static Future<void> toggleGarage(int garageId) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/admin/garages/$garageId/toggle'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
+static Future<List<dynamic>> getAllBookingsAdmin() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/admin/bookings'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
+
 
 }
