@@ -2,11 +2,7 @@ import 'package:intl/intl.dart';
 
 class Booking {
   final int id;
-
-  // Service status
   final String status;
-
-  // 🔥 NEW — Payment status
   final String paymentStatus;
 
   final String? serviceType;
@@ -21,7 +17,6 @@ class Booking {
 
   final double? estimatedCost;
   final double? finalCost;
-
   final String? details;
 
   Booking({
@@ -43,7 +38,6 @@ class Booking {
   // ----------------------------
   // SAFE UI GETTERS
   // ----------------------------
-
   String get garageNameSafe =>
       garageName?.isNotEmpty == true ? garageName! : "—";
 
@@ -71,24 +65,32 @@ class Booking {
   }
 
   // ----------------------------
-  // JSON MAPPER
+  // JSON MAPPER (FIXED)
   // ----------------------------
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
-      id: json['id'],
-      status: json['status'],
+      id: json['id'] ?? 0,
+      status: json['status'] ?? "UNKNOWN",
       paymentStatus: json['paymentStatus'] ?? "PENDING",
+
       serviceType: json['serviceType'],
-      bookingTime: DateTime.parse(json['bookingTime']),
+      bookingTime: DateTime.parse(
+          json['bookingTime'] ?? DateTime.now().toIso8601String()),
+
       garageName: json['garageName'],
       vehiclePlate: json['vehiclePlate'],
       customerEmail: json['customerEmail'],
       mechanicName: json['mechanicName'],
       mechanicPhone: json['mechanicPhone'],
-      estimatedCost:
-          json['estimatedCost']?.toDouble(),
-      finalCost:
-          json['finalCost']?.toDouble(),
+
+      estimatedCost: json['estimatedCost'] != null
+          ? (json['estimatedCost'] as num).toDouble()
+          : null,
+
+      finalCost: json['finalCost'] != null
+          ? (json['finalCost'] as num).toDouble()
+          : null,
+
       details: json['details'],
     );
   }

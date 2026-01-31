@@ -622,5 +622,35 @@ static Future<List<dynamic>> getAllBookingsAdmin() async {
   }
 }
 
+// ================= ADMIN - USER ACTIONS =================
+
+static Future<void> disableUser(int userId) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/admin/users/$userId/disable'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
+
+static Future<void> enableUser(int userId) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/admin/users/$userId/enable'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
+
+
+
 
 }
