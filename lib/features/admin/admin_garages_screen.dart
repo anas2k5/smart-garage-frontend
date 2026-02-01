@@ -30,6 +30,24 @@ class _AdminGaragesScreenState extends State<AdminGaragesScreen> {
     }
   }
 
+  Future<void> _toggleGarage(int id) async {
+    try {
+      await ApiService.toggleGarage(id);
+      await _loadGarages();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Garage status updated")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to update garage")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,10 +58,17 @@ class _AdminGaragesScreenState extends State<AdminGaragesScreen> {
               itemCount: garages.length,
               itemBuilder: (context, index) {
                 final g = garages[index];
+                final isActive = g["active"] == true;
+
                 return ListTile(
                   leading: const Icon(Icons.store),
                   title: Text(g["name"]),
-                  subtitle: Text("Active: ${g["active"]}"),
+                  subtitle: Text("Active: $isActive"),
+                  trailing: Switch(
+                    value: isActive,
+                    onChanged: (_) => _toggleGarage(g["id"]),
+                  ),
+                  onTap: () => _toggleGarage(g["id"]),
                 );
               },
             ),

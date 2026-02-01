@@ -650,6 +650,42 @@ static Future<void> enableUser(int userId) async {
   }
 }
 
+// ================= ADMIN - AUDIT LOGS =================
+
+static Future<List<dynamic>> getRecentAuditLogs() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/admin/audit/recent'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
+
+static Future<List<dynamic>> getAuditByEntity(
+  String entityType,
+  int entityId,
+) async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse(
+      '${ApiConstants.baseUrl}/admin/audit/$entityType/$entityId',
+    ),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
 
 
 

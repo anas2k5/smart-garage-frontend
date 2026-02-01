@@ -4,10 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/api_service.dart';
 import '../auth/login_screen.dart';
 
-// Future screens (you'll add these next)
- import 'admin_users_screen.dart';
- import 'admin_garages_screen.dart';
- import 'admin_bookings_screen.dart';
+// Screens
+import 'admin_users_screen.dart';
+import 'admin_garages_screen.dart';
+import 'admin_bookings_screen.dart';
+import 'admin_audit_screen.dart'; // 🔥 NEW
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -150,12 +151,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ListTile(
                     leading: const Icon(Icons.people),
                     title: const Text("View Users"),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    trailing:
+                        const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                       Navigator.push(
-                       context,
-                         MaterialPageRoute(
-                          builder: (_) => const AdminUsersScreen(),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const AdminUsersScreen(),
                         ),
                       );
                     },
@@ -165,14 +168,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ListTile(
                     leading: const Icon(Icons.store),
                     title: const Text("Manage Garages"),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    trailing:
+                        const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                       Navigator.push(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const AdminGaragesScreen(),
+                          builder: (_) =>
+                              const AdminGaragesScreen(),
                         ),
-                       );
+                      );
                     },
                   ),
 
@@ -180,14 +185,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ListTile(
                     leading: const Icon(Icons.book),
                     title: const Text("View Bookings"),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    trailing:
+                        const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                       Navigator.push(
-                         context,
-                         MaterialPageRoute(
-                         builder: (_) => const AdminBookingsScreen(),
-                         ),
-                       );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const AdminBookingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // ================= AUDIT LOGS =================
+                  ListTile(
+                    leading: const Icon(Icons.security),
+                    title: const Text("Audit Logs"),
+                    trailing:
+                        const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const AdminAuditScreen(),
+                        ),
+                      );
                     },
                   ),
                 ],
