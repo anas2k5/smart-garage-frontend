@@ -686,6 +686,94 @@ static Future<List<dynamic>> getAuditByEntity(
     throw _handleError(response);
   }
 }
+// ================= MECHANIC JOB CARDS =================
+
+static Future<List<dynamic>> getMechanicJobs() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/jobcards/me'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
+
+static Future<void> addJobTask(
+  int jobCardId,
+  String description,
+  double hours,
+  double cost,
+) async {
+  final headers = await _authHeaders();
+
+  final response = await http.post(
+    Uri.parse('${ApiConstants.baseUrl}/jobcards/$jobCardId/tasks'),
+    headers: headers,
+    body: jsonEncode({
+      "description": description,
+      "hours": hours,
+      "cost": cost,
+    }),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw _handleError(response);
+  }
+}
+
+static Future<void> addJobPart(
+  int jobCardId,
+  String name,
+  int quantity,
+  double unitPrice,
+) async {
+  final headers = await _authHeaders();
+
+  final response = await http.post(
+    Uri.parse('${ApiConstants.baseUrl}/jobcards/$jobCardId/parts'),
+    headers: headers,
+    body: jsonEncode({
+      "name": name,
+      "quantity": quantity,
+      "unitPrice": unitPrice,
+    }),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw _handleError(response);
+  }
+}
+
+static Future<void> approveJobCard(int jobCardId) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/jobcards/$jobCardId/approve'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
+
+static Future<void> closeJobCard(int jobCardId) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/jobcards/$jobCardId/close'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
 
 
 
