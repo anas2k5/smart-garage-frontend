@@ -28,9 +28,7 @@ class _JobListScreenState extends State<JobListScreen> {
         loading = false;
       });
     } catch (e) {
-      setState(() {
-        loading = false;
-      });
+      setState(() => loading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
@@ -58,14 +56,19 @@ class _JobListScreenState extends State<JobListScreen> {
                           "Status: ${job['status']} | Booking #${job['booking']['id']}",
                         ),
                         trailing: const Icon(Icons.arrow_forward),
-                        onTap: () {
-                          Navigator.push(
+
+                        // 🔥 FIX 1 — AUTO REFRESH AFTER RETURN
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
                                   JobDetailScreen(job: job),
                             ),
                           );
+
+                          // Refresh jobs after coming back
+                          loadJobs();
                         },
                       ),
                     );

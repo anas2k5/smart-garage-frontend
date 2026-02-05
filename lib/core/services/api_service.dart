@@ -774,6 +774,62 @@ static Future<void> closeJobCard(int jobCardId) async {
     throw _handleError(response);
   }
 }
+// ================= UPDATE GARAGE =================
+static Future<void> updateGarage({
+  required int garageId,
+  required String name,
+  required String address,
+  required String phone,
+}) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.garages}/$garageId'),
+    headers: headers,
+    body: jsonEncode({
+      "name": name,
+      "address": address,
+      "phone": phone,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
+
+// ================= DELETE GARAGE =================
+static Future<void> deleteGarage(int garageId) async {
+  final headers = await _authHeaders();
+
+  final response = await http.delete(
+    Uri.parse('${ApiConstants.garages}/$garageId'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 204) {
+    throw _handleError(response);
+  }
+}
+
+// ================= GET USER BY EMAIL =================
+static Future<int> getUserIdByEmail(String email) async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse(
+      '${ApiConstants.baseUrl}/users/by-email?email=$email',
+    ),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['id'];
+  } else {
+    throw _handleError(response);
+  }
+}
 
 
 

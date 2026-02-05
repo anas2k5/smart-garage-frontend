@@ -13,16 +13,33 @@ class SelectGarageScreen extends StatefulWidget {
   });
 
   @override
-  State<SelectGarageScreen> createState() => _SelectGarageScreenState();
+  State<SelectGarageScreen> createState() =>
+      _SelectGarageScreenState();
 }
 
-class _SelectGarageScreenState extends State<SelectGarageScreen> {
+class _SelectGarageScreenState
+    extends State<SelectGarageScreen> {
   late Future<List<Garage>> _future;
+
+  List<Garage> _allGarages = [];
+  List<Garage> _filteredGarages = [];
 
   @override
   void initState() {
     super.initState();
     _future = ApiService.getGarages();
+  }
+
+  // ================= SEARCH =================
+  void _filterGarages(String query) {
+    final q = query.toLowerCase();
+
+    setState(() {
+      _filteredGarages = _allGarages.where((g) {
+        return g.name.toLowerCase().contains(q) ||
+            g.address.toLowerCase().contains(q);
+      }).toList();
+    });
   }
 
   // ================= STEP HEADER =================
@@ -53,6 +70,23 @@ class _SelectGarageScreenState extends State<SelectGarageScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // ================= SEARCH BAR =================
+  Widget _searchBar() {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: "Search by garage or location",
+        prefixIcon: const Icon(Icons.search),
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      onChanged: _filterGarages,
     );
   }
 
@@ -118,7 +152,8 @@ class _SelectGarageScreenState extends State<SelectGarageScreen> {
       body: FutureBuilder<List<Garage>>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(),
             );
@@ -136,7 +171,11 @@ class _SelectGarageScreenState extends State<SelectGarageScreen> {
             );
           }
 
-          final garages = snapshot.data ?? [];
+          _allGarages = snapshot.data ?? [];
+          _filteredGarages =
+              _filteredGarages.isEmpty
+                  ? _allGarages
+                  : _filteredGarages;
 
           return SafeArea(
             child: Padding(
@@ -146,11 +185,15 @@ class _SelectGarageScreenState extends State<SelectGarageScreen> {
                   _stepHeader(),
                   const SizedBox(height: 16),
 
+                  // 🔍 SEARCH
+                  _searchBar(),
+                  const SizedBox(height: 16),
+
                   Expanded(
-                    child: garages.isEmpty
+                    child: _filteredGarages.isEmpty
                         ? const Center(
                             child: Text(
-                              'No garages available',
+                              'No garages found',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -158,11 +201,14 @@ class _SelectGarageScreenState extends State<SelectGarageScreen> {
                             ),
                           )
                         : ListView.builder(
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: garages.length,
-                            itemBuilder: (context, index) {
+                            physics:
+                                const BouncingScrollPhysics(),
+                            itemCount:
+                                _filteredGarages.length,
+                            itemBuilder:
+                                (context, index) {
                               return _garageCard(
-                                garages[index],
+                                _filteredGarages[index],
                               );
                             },
                           ),
@@ -190,32 +236,28 @@ class _StepChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+      duration:
+          const Duration(milliseconds: 250),
       padding: const EdgeInsets.symmetric(
         horizontal: 14,
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: active ? Colors.deepPurple : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color:
+            active ? Colors.deepPurple : Colors.white,
+        borderRadius:
+            BorderRadius.circular(20),
         border: Border.all(
           color: Colors.deepPurple,
           width: 1.5,
         ),
-        boxShadow: active
-            ? [
-                BoxShadow(
-                  color: Colors.deepPurple.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : [],
       ),
       child: Text(
         title,
         style: TextStyle(
-          color: active ? Colors.white : Colors.deepPurple,
+          color: active
+              ? Colors.white
+              : Colors.deepPurple,
           fontWeight: FontWeight.bold,
           fontSize: 12,
         ),
