@@ -831,6 +831,21 @@ static Future<int> getUserIdByEmail(String email) async {
   }
 }
 
+// OWNER → GET GARAGE JOB CARDS
+static Future<List<dynamic>> getGarageJobCards(int garageId) async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/jobcards/garage/$garageId'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw _handleError(response);
+  }
+}
 
 
 }

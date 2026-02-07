@@ -38,6 +38,7 @@ class Booking {
   // ----------------------------
   // SAFE UI GETTERS
   // ----------------------------
+
   String get garageNameSafe =>
       garageName?.isNotEmpty == true ? garageName! : "—";
 
@@ -59,23 +60,34 @@ class Booking {
   // ----------------------------
   // DATE FORMATTER
   // ----------------------------
+
   String get bookingTimeFormatted {
     return DateFormat("dd MMM yyyy, hh:mm a")
         .format(bookingTime);
   }
 
   // ----------------------------
-  // JSON MAPPER (FIXED)
+  // JSON MAPPER (FINAL FIXED)
   // ----------------------------
+
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
-      id: json['id'] ?? 0,
+
+      // 🔥 FIX — Supports BOTH APIs
+      id: json['id'] ??
+          json['bookingId'] ??
+          0,
+
       status: json['status'] ?? "UNKNOWN",
-      paymentStatus: json['paymentStatus'] ?? "PENDING",
+      paymentStatus:
+          json['paymentStatus'] ?? "PENDING",
 
       serviceType: json['serviceType'],
+
       bookingTime: DateTime.parse(
-          json['bookingTime'] ?? DateTime.now().toIso8601String()),
+        json['bookingTime'] ??
+            DateTime.now().toIso8601String(),
+      ),
 
       garageName: json['garageName'],
       vehiclePlate: json['vehiclePlate'],
@@ -83,13 +95,19 @@ class Booking {
       mechanicName: json['mechanicName'],
       mechanicPhone: json['mechanicPhone'],
 
-      estimatedCost: json['estimatedCost'] != null
-          ? (json['estimatedCost'] as num).toDouble()
-          : null,
+      estimatedCost:
+          json['estimatedCost'] != null
+              ? (json['estimatedCost']
+                      as num)
+                  .toDouble()
+              : null,
 
-      finalCost: json['finalCost'] != null
-          ? (json['finalCost'] as num).toDouble()
-          : null,
+      finalCost:
+          json['finalCost'] != null
+              ? (json['finalCost']
+                      as num)
+                  .toDouble()
+              : null,
 
       details: json['details'],
     );
