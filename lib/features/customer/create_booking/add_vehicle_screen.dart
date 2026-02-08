@@ -17,6 +17,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
   bool _loading = false;
 
+  // Unified Design Colors
+  static const Color brandGreen = Color(0xFF00B562);
+  static const Color surfaceDark = Color(0xFF1C1C1E);
+  static const Color backgroundDark = Color(0xFF121212);
+
   @override
   void dispose() {
     _plateController.dispose();
@@ -38,95 +43,149 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         model: _modelController.text.trim(),
       );
 
-      Navigator.pop(context, true); // ✅ success
+      if (!mounted) return;
+      Navigator.pop(context, true); 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          backgroundColor: Colors.redAccent,
           content: Text(
             e.toString().contains("exists")
-                ? "Vehicle already exists"
-                : "Failed to add vehicle",
+                ? "Vehicle already registered"
+                : "Error adding vehicle. Try again.",
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Add Vehicle")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // 🚗 PLATE NUMBER
-              TextFormField(
-                controller: _plateController,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: "Plate Number",
-                  prefixIcon: Icon(Icons.confirmation_number),
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? "Enter plate number" : null,
-              ),
-
-              const SizedBox(height: 12),
-
-              // 🏭 MAKE
-              TextFormField(
-                controller: _makeController,
-                decoration: const InputDecoration(
-                  labelText: "Make (e.g. Honda)",
-                  prefixIcon: Icon(Icons.directions_car),
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? "Enter vehicle make" : null,
-              ),
-
-              const SizedBox(height: 12),
-
-              // 🚘 MODEL
-              TextFormField(
-                controller: _modelController,
-                decoration: const InputDecoration(
-                  labelText: "Model (e.g. City)",
-                  prefixIcon: Icon(Icons.car_repair),
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? "Enter vehicle model" : null,
-              ),
-
-              const SizedBox(height: 24),
-
-              // 💾 SAVE BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: _loading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text("Save Vehicle"),
-                ),
-              )
-            ],
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        scaffoldBackgroundColor: backgroundDark,
+        appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0),
+      ),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Register Vehicle", style: TextStyle(fontWeight: FontWeight.bold)),
+          leading: IconButton(
+            icon: const Icon(Icons.close_rounded),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("VEHICLE DETAILS", 
+                  style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                const SizedBox(height: 20),
+
+                _buildTextField(
+                  controller: _plateController,
+                  label: "Plate Number",
+                  hint: "e.g. MH 12 AB 1234",
+                  icon: Icons.badge_outlined,
+                  caps: TextCapitalization.characters,
+                  validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  controller: _makeController,
+                  label: "Manufacturer",
+                  hint: "e.g. Hyundai",
+                  icon: Icons.factory_outlined,
+                  validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  controller: _modelController,
+                  label: "Model",
+                  hint: "e.g. i20 Asta",
+                  icon: Icons.directions_car_filled_outlined,
+                  validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                ),
+
+                const SizedBox(height: 40),
+
+                _buildSaveButton(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextCapitalization caps = TextCapitalization.words,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(label, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+        ),
+        TextFormField(
+          controller: controller,
+          textCapitalization: caps,
+          validator: validator,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
+            prefixIcon: Icon(icon, color: brandGreen, size: 20),
+            filled: true,
+            fillColor: surfaceDark,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: brandGreen, width: 1),
+            ),
+            errorStyle: const TextStyle(color: Colors.redAccent),
+            contentPadding: const EdgeInsets.symmetric(vertical: 18),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: brandGreen,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+        ),
+        onPressed: _loading ? null : _submit,
+        child: _loading
+            ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Text("REGISTER VEHICLE", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
       ),
     );
   }

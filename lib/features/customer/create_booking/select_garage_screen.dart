@@ -6,23 +6,21 @@ import 'select_service_screen.dart';
 
 class SelectGarageScreen extends StatefulWidget {
   final Vehicle selectedVehicle;
-
-  const SelectGarageScreen({
-    super.key,
-    required this.selectedVehicle,
-  });
+  const SelectGarageScreen({super.key, required this.selectedVehicle});
 
   @override
-  State<SelectGarageScreen> createState() =>
-      _SelectGarageScreenState();
+  State<SelectGarageScreen> createState() => _SelectGarageScreenState();
 }
 
-class _SelectGarageScreenState
-    extends State<SelectGarageScreen> {
+class _SelectGarageScreenState extends State<SelectGarageScreen> {
   late Future<List<Garage>> _future;
-
   List<Garage> _allGarages = [];
   List<Garage> _filteredGarages = [];
+  final TextEditingController _searchController = TextEditingController();
+
+  static const Color brandGreen = Color(0xFF00B562);
+  static const Color surfaceDark = Color(0xFF1C1C1E);
+  static const Color backgroundDark = Color(0xFF121212);
 
   @override
   void initState() {
@@ -30,238 +28,110 @@ class _SelectGarageScreenState
     _future = ApiService.getGarages();
   }
 
-  // ================= SEARCH =================
   void _filterGarages(String query) {
-    final q = query.toLowerCase();
-
     setState(() {
-      _filteredGarages = _allGarages.where((g) {
-        return g.name.toLowerCase().contains(q) ||
-            g.address.toLowerCase().contains(q);
-      }).toList();
+      _filteredGarages = _allGarages.where((g) => g.name.toLowerCase().contains(query.toLowerCase())).toList();
     });
   }
 
-  // ================= STEP HEADER =================
-  Widget _stepHeader() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: const [
-            _StepChip(title: "Vehicle", active: true),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios, size: 14),
-            SizedBox(width: 8),
-            _StepChip(title: "Garage", active: true),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios, size: 14),
-            SizedBox(width: 8),
-            _StepChip(title: "Service"),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios, size: 14),
-            SizedBox(width: 8),
-            _StepChip(title: "Confirm"),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ================= SEARCH BAR =================
-  Widget _searchBar() {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: "Search by garage or location",
-        prefixIcon: const Icon(Icons.search),
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      onChanged: _filterGarages,
-    );
-  }
-
-  // ================= GARAGE CARD =================
-  Widget _garageCard(Garage g) {
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(14),
-        leading: const CircleAvatar(
-          backgroundColor: Colors.deepPurple,
-          child: Icon(Icons.store, color: Colors.white),
-        ),
-        title: Text(
-          g.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            g.address,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey,
-        ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SelectServiceScreen(
-                garage: g,
-                vehicle: widget.selectedVehicle,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // ================= MAIN UI =================
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Garage'),
-        centerTitle: true,
-      ),
-      body: FutureBuilder<List<Garage>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+    return Theme(
+      data: ThemeData.dark().copyWith(useMaterial3: true, scaffoldBackgroundColor: backgroundDark),
+      child: Scaffold(
+        appBar: AppBar(title: const Text("Choose Garage"), centerTitle: true),
+        body: FutureBuilder<List<Garage>>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: brandGreen));
+            if (snapshot.hasError) return const Center(child: Text("Error loading garages"));
+            
+            if (_allGarages.isEmpty) {
+              _allGarages = snapshot.data ?? [];
+              _filteredGarages = _allGarages;
+            }
 
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text(
-                'Failed to load garages',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            );
-          }
-
-          _allGarages = snapshot.data ?? [];
-          _filteredGarages =
-              _filteredGarages.isEmpty
-                  ? _allGarages
-                  : _filteredGarages;
-
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            return SafeArea(
               child: Column(
                 children: [
-                  _stepHeader(),
-                  const SizedBox(height: 16),
-
-                  // 🔍 SEARCH
-                  _searchBar(),
-                  const SizedBox(height: 16),
-
+                  _buildStepHeader(),
+                  Padding(padding: const EdgeInsets.all(16), child: _buildSearchBar()),
                   Expanded(
-                    child: _filteredGarages.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No garages found',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            physics:
-                                const BouncingScrollPhysics(),
-                            itemCount:
-                                _filteredGarages.length,
-                            itemBuilder:
-                                (context, index) {
-                              return _garageCard(
-                                _filteredGarages[index],
-                              );
-                            },
-                          ),
+                    child: _filteredGarages.isEmpty ? const Center(child: Text("No workshops found")) : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredGarages.length,
+                      itemBuilder: (context, index) => _buildGarageCard(_filteredGarages[index]),
+                    ),
                   ),
                 ],
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      color: surfaceDark,
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _StepChip(title: "Vehicle", isDone: true),
+          _StepLine(isDone: true),
+          _StepChip(title: "Garage", isActive: true),
+          _StepLine(),
+          _StepChip(title: "Service"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return TextField(
+      controller: _searchController,
+      onChanged: _filterGarages,
+      decoration: InputDecoration(
+        hintText: "Search workshop...",
+        prefixIcon: const Icon(Icons.search, color: brandGreen),
+        filled: true,
+        fillColor: surfaceDark,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      ),
+    );
+  }
+
+  Widget _buildGarageCard(Garage g) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(color: surfaceDark, borderRadius: BorderRadius.circular(20)),
+      child: ListTile(
+        leading: const Icon(Icons.home_repair_service, color: brandGreen),
+        title: Text(g.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(g.address, maxLines: 1, overflow: TextOverflow.ellipsis),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SelectServiceScreen(garage: g, vehicle: widget.selectedVehicle))),
       ),
     );
   }
 }
 
-// ================= STEP CHIP =================
 class _StepChip extends StatelessWidget {
   final String title;
-  final bool active;
-
-  const _StepChip({
-    required this.title,
-    this.active = false,
-  });
+  final bool isActive;
+  final bool isDone;
+  const _StepChip({required this.title, this.isActive = false, this.isDone = false});
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration:
-          const Duration(milliseconds: 250),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        color:
-            active ? Colors.deepPurple : Colors.white,
-        borderRadius:
-            BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.deepPurple,
-          width: 1.5,
-        ),
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: active
-              ? Colors.white
-              : Colors.deepPurple,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Column(children: [Container(width: 24, height: 24, decoration: BoxDecoration(color: isDone || isActive ? const Color(0xFF00B562) : Colors.white10, shape: BoxShape.circle), child: Center(child: Icon(isDone ? Icons.check : Icons.circle, size: isDone ? 14 : 6))), const SizedBox(height: 4), Text(title, style: TextStyle(color: isDone || isActive ? Colors.white : Colors.white24, fontSize: 10))]);
+}
+
+class _StepLine extends StatelessWidget {
+  final bool isDone;
+  const _StepLine({this.isDone = false});
+  @override
+  Widget build(BuildContext context) => Container(width: 40, height: 2, margin: const EdgeInsets.only(left: 8, right: 8, bottom: 15), color: isDone ? const Color(0xFF00B562) : Colors.white10);
 }

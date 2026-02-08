@@ -16,30 +16,32 @@ class SelectServiceScreen extends StatefulWidget {
   });
 
   @override
-  State<SelectServiceScreen> createState() =>
-      _SelectServiceScreenState();
+  State<SelectServiceScreen> createState() => _SelectServiceScreenState();
 }
 
-class _SelectServiceScreenState
-    extends State<SelectServiceScreen> {
+class _SelectServiceScreenState extends State<SelectServiceScreen> {
   late Future<List<GarageService>> _future;
-  final ScrollController _stepScroll =
-      ScrollController();
+  final ScrollController _stepScroll = ScrollController();
+
+  // Unified Design System Colors
+  static const Color brandGreen = Color(0xFF00B562);
+  static const Color surfaceDark = Color(0xFF1C1C1E);
+  static const Color backgroundDark = Color(0xFF121212);
 
   @override
   void initState() {
     super.initState();
-    _future =
-        ApiService.getGarageServices(widget.garage.id);
+    _future = ApiService.getGarageServices(widget.garage.id);
 
-    // auto-scroll step header to active step
+    // Auto-scroll logic preserved for UX
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _stepScroll.animateTo(
-        120,
-        duration:
-            const Duration(milliseconds: 400),
-        curve: Curves.easeOut,
-      );
+      if (_stepScroll.hasClients) {
+        _stepScroll.animateTo(
+          120,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutQuart,
+        );
+      }
     });
   }
 
@@ -49,34 +51,82 @@ class _SelectServiceScreenState
     super.dispose();
   }
 
-  // ================= STEP HEADER =================
-  Widget _stepHeader() {
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        scaffoldBackgroundColor: backgroundDark,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: backgroundDark,
+          elevation: 0,
+          centerTitle: true,
+        ),
+      ),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Select Service", style: TextStyle(fontWeight: FontWeight.bold)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: FutureBuilder<List<GarageService>>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: brandGreen));
+            }
+
+            if (snapshot.hasError) {
+              return _buildErrorState();
+            }
+
+            final services = snapshot.data ?? [];
+
+            return SafeArea(
+              child: Column(
+                children: [
+                  _buildStepHeader(),
+                  Expanded(
+                    child: services.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: services.length,
+                            itemBuilder: (context, index) => _serviceCard(services[index], index),
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepHeader() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
+        color: surfaceDark,
+        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
       ),
       child: SingleChildScrollView(
         controller: _stepScroll,
         scrollDirection: Axis.horizontal,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            _StepChip(title: "Vehicle", done: true),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios, size: 14),
-            SizedBox(width: 8),
-            _StepChip(title: "Garage", done: true),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios, size: 14),
-            SizedBox(width: 8),
-            _StepChip(
-              title: "Service",
-              active: true,
-            ),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios, size: 14),
-            SizedBox(width: 8),
+            _StepChip(title: "Vehicle", isDone: true),
+            _StepLine(isDone: true),
+            _StepChip(title: "Garage", isDone: true),
+            _StepLine(isDone: true),
+            _StepChip(title: "Service", isActive: true),
+            _StepLine(),
             _StepChip(title: "Confirm"),
           ],
         ),
@@ -84,39 +134,34 @@ class _SelectServiceScreenState
     );
   }
 
-  // ================= SERVICE CARD =================
-  Widget _serviceCard(
-      GarageService s, int index) {
+  Widget _serviceCard(GarageService s, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration:
-          Duration(milliseconds: 250 + index * 80),
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Opacity(
           opacity: value,
           child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
+            offset: Offset(0, 30 * (1 - value)),
             child: child,
           ),
         );
       },
-      child: Card(
-        elevation: 4,
-        margin: const EdgeInsets.symmetric(
-            vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: surfaceDark,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: InkWell(
-          borderRadius:
-              BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    ConfirmBookingScreen(
+                builder: (_) => ConfirmBookingScreen(
                   garage: widget.garage,
                   vehicle: widget.vehicle,
                   service: s,
@@ -125,78 +170,47 @@ class _SelectServiceScreenState
             );
           },
           child: Padding(
-            padding:
-                const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 22,
-                  backgroundColor:
-                      Colors.green,
-                  child: Icon(Icons.build,
-                      color: Colors.white),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: brandGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.build_circle_outlined, color: brandGreen, size: 28),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         s.name,
-                        maxLines: 1,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(
-                          fontWeight:
-                              FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
                       ),
-                      const SizedBox(
-                          height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        s.description ??
-                            "No description available",
+                        s.description ?? "Complete professional service",
+                        style: const TextStyle(color: Colors.white54, fontSize: 13),
                         maxLines: 2,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(
-                          fontSize: 13,
-                          color:
-                              Colors.black54,
-                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green
-                        .withOpacity(0.15),
-                    borderRadius:
-                        BorderRadius.circular(
-                            20),
-                    border: Border.all(
-                        color: Colors.green),
+                    color: brandGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    "₹ ${s.price}",
-                    style:
-                        const TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                      color: Colors.green,
-                    ),
+                    "₹${s.price}",
+                    style: const TextStyle(color: brandGreen, fontWeight: FontWeight.w900, fontSize: 14),
                   ),
                 ),
               ],
@@ -207,177 +221,89 @@ class _SelectServiceScreenState
     );
   }
 
-  // ================= MAIN UI =================
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Select Service"),
-        centerTitle: true,
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.miscellaneous_services_rounded, size: 64, color: Colors.white10),
+          SizedBox(height: 16),
+          Text("No services available here", style: TextStyle(color: Colors.white38)),
+        ],
       ),
-      body: FutureBuilder<List<GarageService>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-                child:
-                    CircularProgressIndicator());
-          }
+    );
+  }
 
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text(
-                "Failed to load services",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
-              ),
-            );
-          }
-
-          final services =
-              snapshot.data ?? [];
-
-          return SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _stepHeader(),
-                  const SizedBox(
-                      height: 16),
-
-                  Expanded(
-                    child: services.isEmpty
-                        ? const Center(
-                            child: Column(
-                              mainAxisSize:
-                                  MainAxisSize
-                                      .min,
-                              children: [
-                                Icon(
-                                  Icons.build,
-                                  size: 48,
-                                  color:
-                                      Colors.grey,
-                                ),
-                                SizedBox(
-                                    height: 8),
-                                Text(
-                                  "No services available",
-                                  style:
-                                      TextStyle(
-                                    fontSize:
-                                        16,
-                                    fontWeight:
-                                        FontWeight
-                                            .bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            physics:
-                                const BouncingScrollPhysics(),
-                            itemCount:
-                                services.length,
-                            itemBuilder:
-                                (context, index) {
-                              return _serviceCard(
-                                services[index],
-                                index,
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.redAccent),
+          const SizedBox(height: 16),
+          const Text("Sync Error"),
+          TextButton(
+            onPressed: () => setState(() { _future = ApiService.getGarageServices(widget.garage.id); }),
+            child: const Text("Retry", style: TextStyle(color: brandGreen)),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ================= STEP CHIP =================
 class _StepChip extends StatelessWidget {
   final String title;
-  final bool active;
-  final bool done;
+  final bool isActive;
+  final bool isDone;
 
-  const _StepChip({
-    required this.title,
-    this.active = false,
-    this.done = false,
-  });
+  const _StepChip({required this.title, this.isActive = false, this.isDone = false});
 
   @override
   Widget build(BuildContext context) {
-    Color bgColor = active
-        ? Colors.deepPurple
-        : done
-            ? Colors.green
-            : Colors.white;
-
-    Color textColor = active || done
-        ? Colors.white
-        : Colors.deepPurple;
-
-    return AnimatedContainer(
-      duration:
-          const Duration(milliseconds: 250),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius:
-            BorderRadius.circular(20),
-        border: Border.all(
-          color: active || done
-              ? bgColor
-              : Colors.deepPurple,
-          width: 1.5,
-        ),
-        boxShadow: active
-            ? [
-                BoxShadow(
-                  color: Colors
-                      .deepPurple
-                      .withOpacity(0.3),
-                  blurRadius: 8,
-                  offset:
-                      const Offset(0, 4),
-                ),
-              ]
-            : [],
-      ),
-      child: Row(
-        children: [
-          if (done) ...[
-            const Icon(Icons.check,
-                size: 14,
-                color: Colors.white),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            title,
-            style: TextStyle(
-              color: textColor,
-              fontWeight:
-                  FontWeight.bold,
-              fontSize: 12,
+    return Column(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: isDone || isActive ? const Color(0xFF00B562) : Colors.white10,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Icon(
+              isDone ? Icons.check : Icons.circle,
+              size: isDone ? 18 : 8,
+              color: isDone || isActive ? Colors.white : Colors.white24,
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: TextStyle(
+            color: isDone || isActive ? Colors.white : Colors.white24,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StepLine extends StatelessWidget {
+  final bool isDone;
+  const _StepLine({this.isDone = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 2,
+      // FIXED: Replaced 'marginBottom' with 'EdgeInsets.only'
+      margin: const EdgeInsets.only(left: 8, right: 8, bottom: 15),
+      color: isDone ? const Color(0xFF00B562) : Colors.white10,
     );
   }
 }
