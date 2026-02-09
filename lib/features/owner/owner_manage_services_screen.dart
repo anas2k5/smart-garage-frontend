@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:smart_garage_app/core/services/api_service.dart';
-import 'package:smart_garage_app/models/garage.dart';
-import 'package:smart_garage_app/models/garage_service.dart';
+import '../../core/services/api_service.dart';
+import '../../models/garage.dart';
+import '../../models/garage_service.dart';
 
 class OwnerManageServicesScreen extends StatefulWidget {
   final Garage garage;
@@ -17,6 +17,11 @@ class _OwnerManageServicesScreenState
     extends State<OwnerManageServicesScreen> {
   late Future<List<GarageService>> _future;
 
+  // Global Brand Palette
+  static const Color brandGreen = Color(0xFF00B562);
+  static const Color surfaceDark = Color(0xFF1C1C1E);
+  static const Color backgroundDark = Color(0xFF121212);
+
   @override
   void initState() {
     super.initState();
@@ -31,106 +36,111 @@ class _OwnerManageServicesScreenState
     setState(_load);
   }
 
-  // ================= SERVICE DIALOG =================
+  // ================= MODERN SERVICE DIALOG =================
 
   void _openServiceDialog({GarageService? service}) {
-    final nameCtrl =
-        TextEditingController(text: service?.name ?? '');
-    final descCtrl =
-        TextEditingController(text: service?.description ?? '');
-    final priceCtrl =
-        TextEditingController(text: service?.price.toString() ?? '');
+    final nameCtrl = TextEditingController(text: service?.name ?? '');
+    final descCtrl = TextEditingController(text: service?.description ?? '');
+    final priceCtrl = TextEditingController(text: service?.price.toString() ?? '');
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(service == null ? "Add Service" : "Edit Service"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Service Name"),
+      builder: (_) => Theme(
+        data: ThemeData.dark().copyWith(useMaterial3: true),
+        child: AlertDialog(
+          backgroundColor: surfaceDark,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(service == null ? "Add New Service" : "Edit Service", 
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDialogField(nameCtrl, "Service Name", Icons.settings_suggest_rounded),
+                const SizedBox(height: 16),
+                _buildDialogField(descCtrl, "Description", Icons.description_rounded),
+                const SizedBox(height: 16),
+                _buildDialogField(priceCtrl, "Price", Icons.payments_rounded, 
+                    type: TextInputType.number, prefix: "₹ "),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descCtrl,
-              decoration: const InputDecoration(labelText: "Description"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: Colors.white38)),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: priceCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: "Price",
-                prefixText: "₹ ",
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: brandGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+              onPressed: () async {
+                final price = double.tryParse(priceCtrl.text);
+                if (price == null) return;
+
+                if (service == null) {
+                  await ApiService.addGarageService(
+                    garageId: widget.garage.id,
+                    name: nameCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    price: price,
+                  );
+                } else {
+                  await ApiService.updateGarageService(
+                    serviceId: service.id,
+                    name: nameCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    price: price,
+                  );
+                }
+
+                if (!mounted) return;
+                Navigator.pop(context);
+                _reload();
+              },
+              child: const Text("Save Service"),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final price = double.tryParse(priceCtrl.text);
-              if (price == null) return;
-
-              if (service == null) {
-                await ApiService.addGarageService(
-                  garageId: widget.garage.id,
-                  name: nameCtrl.text,
-                  description: descCtrl.text,
-                  price: price,
-                );
-              } else {
-                await ApiService.updateGarageService(
-                  serviceId: service.id,
-                  name: nameCtrl.text,
-                  description: descCtrl.text,
-                  price: price,
-                );
-              }
-
-              Navigator.pop(context);
-              _reload();
-            },
-            child: const Text("Save"),
-          ),
-        ],
       ),
     );
   }
 
-  // ================= DEACTIVATE =================
+  Widget _buildDialogField(TextEditingController ctrl, String label, IconData icon, 
+      {TextInputType type = TextInputType.text, String? prefix}) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: type,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixText: prefix,
+        prefixIcon: Icon(icon, color: brandGreen, size: 20),
+        filled: true,
+        fillColor: backgroundDark,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+    );
+  }
+
+  // ================= MODERN DEACTIVATE =================
 
   void _confirmDeactivate(GarageService service) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text("Deactivate Service"),
-        content: Text(
-          "Are you sure you want to deactivate '${service.name}'?\n\nCustomers will no longer see this service.",
-        ),
+        backgroundColor: surfaceDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("Deactivate Service?"),
+        content: Text("Are you sure you want to deactivate '${service.name}'?\n\nThis will hide the service from your customers."),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () async {
               await ApiService.deactivateGarageService(service.id);
+              if (!mounted) return;
               Navigator.pop(context);
               _reload();
             },
@@ -145,68 +155,97 @@ class _OwnerManageServicesScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Manage Services")),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openServiceDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text("Add Service"),
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        scaffoldBackgroundColor: backgroundDark,
+        appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0),
       ),
-      body: FutureBuilder<List<GarageService>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Catalog Management", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          backgroundColor: brandGreen,
+          foregroundColor: Colors.white,
+          onPressed: () => _openServiceDialog(),
+          icon: const Icon(Icons.add_circle_outline_rounded),
+          label: const Text("New Service", style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        body: FutureBuilder<List<GarageService>>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: brandGreen));
+            }
+            if (snapshot.hasError) {
+              return const Center(child: Text("Error loading service catalog"));
+            }
 
-          if (snapshot.hasError) {
-            return const Center(child: Text("Failed to load services"));
-          }
+            final services = snapshot.data ?? [];
+            if (services.isEmpty) return _buildEmptyState();
 
-          final services = snapshot.data ?? [];
+            return RefreshIndicator(
+              color: brandGreen,
+              onRefresh: () async => _reload(),
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                itemCount: services.length,
+                itemBuilder: (_, i) => _buildServiceCard(services[i]),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-          if (services.isEmpty) {
-            return const Center(child: Text("No services added"));
-          }
+  Widget _buildServiceCard(GarageService s) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: surfaceDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text("₹${s.price.toStringAsFixed(0)}", 
+            style: const TextStyle(color: brandGreen, fontWeight: FontWeight.w900, fontSize: 14)),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_note_rounded, color: Colors.white38),
+              onPressed: () => _openServiceDialog(service: s),
+            ),
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline_rounded, color: Colors.redAccent, size: 20),
+              onPressed: () => _confirmDeactivate(s),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: services.length,
-            itemBuilder: (_, i) {
-              final s = services[i];
-
-              return Card(
-                elevation: 3,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ListTile(
-                  title: Text(
-                    s.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text("₹${s.price.toStringAsFixed(2)}"),
-                  trailing: Wrap(
-                    spacing: 8,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () =>
-                            _openServiceDialog(service: s),
-                      ),
-                      IconButton(
-                        icon:
-                            const Icon(Icons.block, color: Colors.red),
-                        onPressed: () => _confirmDeactivate(s),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.auto_fix_off_rounded, size: 64, color: Colors.white10),
+          SizedBox(height: 16),
+          Text("Catalog is empty", style: TextStyle(color: Colors.white38)),
+        ],
       ),
     );
   }

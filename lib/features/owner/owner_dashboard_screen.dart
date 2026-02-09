@@ -13,15 +13,16 @@ class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
 
   @override
-  State<OwnerDashboardScreen> createState() =>
-      _OwnerDashboardScreenState();
+  State<OwnerDashboardScreen> createState() => _OwnerDashboardScreenState();
 }
 
-class _OwnerDashboardScreenState
-    extends State<OwnerDashboardScreen>
-    with SingleTickerProviderStateMixin {
+class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with SingleTickerProviderStateMixin {
   late Future<Map<String, dynamic>> _future;
   late AnimationController _animController;
+
+  static const Color brandGreen = Color(0xFF00B562);
+  static const Color surfaceDark = Color(0xFF1C1C1E);
+  static const Color backgroundDark = Color(0xFF121212);
 
   @override
   void initState() {
@@ -29,7 +30,7 @@ class _OwnerDashboardScreenState
     _future = ApiService.getOwnerDashboard();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
     )..forward();
   }
 
@@ -39,476 +40,315 @@ class _OwnerDashboardScreenState
     super.dispose();
   }
 
-  // ================= LOGOUT =================
+  void _reload() => setState(() => _future = ApiService.getOwnerDashboard());
+
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-
     if (!mounted) return;
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (_) => false);
+  }
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (_) => false,
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        scaffoldBackgroundColor: backgroundDark,
+        appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0),
+      ),
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: RefreshIndicator(
+          color: brandGreen,
+          onRefresh: () async => _reload(),
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: brandGreen));
+              }
+              if (snapshot.hasError || snapshot.data == null) {
+                return _buildErrorState();
+              }
+
+              final data = snapshot.data!;
+              return ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                children: [
+                  _buildWelcomeHeader(),
+                  const SizedBox(height: 20),
+                  _buildImageHero(), 
+                  const SizedBox(height: 24),
+                  _buildSectionHeader("Workshop Overview"),
+                  const SizedBox(height: 12),
+                  _buildStatGrid(data),
+                  const SizedBox(height: 28),
+                  _buildSectionHeader("Business Actions"),
+                  const SizedBox(height: 12),
+                  _buildActionRow(),
+                  const SizedBox(height: 28),
+                  _buildSectionHeader("Active Bookings", trailing: "View All"),
+                  const SizedBox(height: 12),
+                  _buildRecentBookings(data["recentBookings"]),
+                  const SizedBox(height: 28),
+                  _buildSectionHeader("Total Revenue"),
+                  const SizedBox(height: 12),
+                  _buildRecentPayments(data["recentPayments"]),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
-  // ================= UI HELPERS =================
+  Widget _buildImageHero() {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        image: const DecorationImage(
+          image: NetworkImage('https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1000&auto=format&fit=crop'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: brandGreen, borderRadius: BorderRadius.circular(8)),
+              child: const Text("PARTNER INSIGHT", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Track your garage earnings\nand service performance.",
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-  Widget _statCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-    VoidCallback? onTap,
-  }) {
-    return Expanded(
-      child: ScaleTransition(
-        scale: Tween(begin: 0.9, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _animController,
-            curve: Curves.easeOutBack,
+  Widget _buildWelcomeHeader() {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(shape: BoxShape.circle, color: brandGreen),
+          child: const CircleAvatar(
+            radius: 28,
+            backgroundImage: NetworkImage('https://cdn-icons-png.flaticon.com/512/3135/3135715.png'),
           ),
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: color.withOpacity(0.4)),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.15),
-                  blurRadius: 10,
-                  offset: const Offset(0, 6),
-                ),
+        const SizedBox(width: 16),
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Garage Owner Portal", style: TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.1)),
+            Text("Welcome Back 👋", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text("SMART GARAGE", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16, color: brandGreen)),
+      actions: [
+        IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () {}),
+        IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.white70), onPressed: _logout),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {String? trailing}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+        if (trailing != null)
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAllBookingsScreen())),
+            child: Text(trailing, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildStatGrid(Map data) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.4,
+      children: [
+        _statCard(Icons.home_repair_service_rounded, "Garages", data["activeGarages"].toString(), brandGreen, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerGaragesScreen()))),
+        _statCard(Icons.analytics_rounded, "Bookings", data["totalBookings"].toString(), Colors.blueAccent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAllBookingsScreen()))),
+        _statCard(Icons.pending_actions_rounded, "Pending Jobs", data["pendingBookings"].toString(), Colors.orangeAccent, () {}),
+        _statCard(Icons.payments_rounded, "Net Revenue", "₹${data["totalRevenue"] ?? 0}", brandGreen, () {}),
+      ],
+    );
+  }
+
+  Widget _statCard(IconData icon, String label, String value, Color color, VoidCallback onTap) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: surfaceDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 20),
+                const Icon(Icons.arrow_outward_rounded, size: 14, color: Colors.white24),
               ],
             ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
+                Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionRow() {
+    return Row(
+      children: [
+        Expanded(child: _actionButton("Garages", Icons.home_repair_service_rounded, brandGreen, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerGaragesScreen())))),
+        const SizedBox(width: 12),
+        Expanded(child: _actionButton("Add Branch", Icons.add_business_rounded, Colors.white, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddGarageScreen())))),
+      ],
+    );
+  }
+
+  Widget _actionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: surfaceDark,
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.white.withOpacity(0.05))),
+        elevation: 0,
+      ),
+      onPressed: onTap,
+      icon: Icon(icon, size: 18),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+    );
+  }
+
+  Widget _buildRecentBookings(List? bookings) {
+    if (bookings == null || bookings.isEmpty) return _buildEmptyState("No active bookings");
+    return Column(children: bookings.take(3).map((b) => _buildBookingItem(b)).toList());
+  }
+
+  Widget _buildBookingItem(dynamic json) {
+    final bool isDone = json["status"] == "COMPLETED" || json["status"] == "PAID";
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: surfaceDark, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.03))),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: (isDone ? brandGreen : Colors.orangeAccent).withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(isDone ? Icons.verified_user_rounded : Icons.timer_outlined, color: isDone ? brandGreen : Colors.orangeAccent, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  backgroundColor: color.withOpacity(0.15),
-                  child: Icon(icon, color: color),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                  ),
-                ),
+                Text("Order #${json["id"]}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(json["serviceType"] ?? "Service Entry", style: const TextStyle(color: Colors.white38, fontSize: 11)),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case "PENDING":
-        return Colors.orange;
-      case "ACCEPTED":
-        return Colors.blue;
-      case "IN_PROGRESS":
-        return Colors.purple;
-      case "COMPLETED":
-        return Colors.green;
-      case "PAID":
-      case "SUCCESS":
-        return Colors.green;
-      case "CANCELLED":
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  // ================= RECENT BOOKING TILE =================
-  Widget _recentBookingTile(Map<String, dynamic> json) {
-    late Booking booking;
-
-    try {
-      booking = Booking.fromJson(json);
-    } catch (_) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ListTile(
-        title: Text(
-          "Booking #${booking.id}",
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text("Garage: ${booking.garageNameSafe}"),
-            Text("Service: ${booking.serviceTypeSafe}"),
-            const SizedBox(height: 6),
-            _statusChip(booking.status),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ================= RECENT PAYMENT TILE =================
-  Widget _recentPaymentTile(Map<String, dynamic> p) {
-    final paidAt = p["paidAt"] != null
-        ? DateFormat("dd MMM yyyy, hh:mm a")
-            .format(DateTime.parse(p["paidAt"]))
-        : "—";
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.green.withOpacity(0.15),
-          child: const Icon(Icons.payments, color: Colors.green),
-        ),
-        title: Text(
-          "₹ ${p["amount"] ?? "0"}",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text("Garage: ${p["garageName"] ?? "—"}"),
-            Text("Customer: ${p["customerEmail"] ?? "—"}"),
-            Text("Method: ${p["method"] ?? "CARD"}"),
-            Text(
-              "Paid: $paidAt",
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-        trailing: _statusChip("PAID"),
-      ),
-    );
-  }
-
-  Widget _statusChip(String status) {
-    final color = _statusColor(status);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  String _formatCurrency(double v) {
-    return "₹ ${v.toStringAsFixed(0)}";
-  }
-
-  // ================= UI =================
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Owner Dashboard"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ),
+          _statusBadge(json["status"]),
         ],
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    );
+  }
 
-          if (snapshot.hasError || snapshot.data == null) {
-            return const Center(child: Text("Failed to load dashboard"));
-          }
+  Widget _buildRecentPayments(List? payments) {
+    if (payments == null || payments.isEmpty) return _buildEmptyState("No revenue logs");
+    return Column(children: payments.take(3).map((p) => _buildPaymentItem(p)).toList());
+  }
 
-          final data = snapshot.data!;
-          final activeGarages = data["activeGarages"] ?? 0;
-          final totalBookings = data["totalBookings"] ?? 0;
-          final pendingBookings = data["pendingBookings"] ?? 0;
-          final revenueValue =
-              (data["totalRevenue"] ?? 0).toDouble();
-
-          final recentBookings =
-              (data["recentBookings"] as List? ?? []);
-          final recentPayments =
-              (data["recentPayments"] as List? ?? []);
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {
-                _future = ApiService.getOwnerDashboard();
-              });
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // ================= WELCOME =================
-                Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const ListTile(
-                    leading: CircleAvatar(child: Icon(Icons.person)),
-                    title: Text("Welcome Owner 👋"),
-                    subtitle: Text(
-                        "Manage your garages and bookings efficiently"),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // ================= STATS ROW 1 =================
-                Row(
-                  children: [
-                    _statCard(
-                      icon: Icons.garage,
-                      label: "Active Garages",
-                      value: "$activeGarages",
-                      color: Colors.indigo,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const OwnerGaragesScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    _statCard(
-                      icon: Icons.receipt_long,
-                      label: "Total Bookings",
-                      value: "$totalBookings",
-                      color: Colors.blue,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const OwnerAllBookingsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                // ================= STATS ROW 2 =================
-                Row(
-                  children: [
-                    _statCard(
-                      icon: Icons.hourglass_top,
-                      label: "Pending",
-                      value: "$pendingBookings",
-                      color: Colors.orange,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const OwnerAllBookingsScreen(
-                                  filter: "PENDING",
-                                ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    _statCard(
-                      icon: Icons.currency_rupee,
-                      label: "Revenue",
-                      value: _formatCurrency(revenueValue),
-                      color: Colors.green,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 28),
-
-                // ================= QUICK ACTIONS =================
-                const Text(
-                  "Quick Actions",
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _quickActionCard(
-                        icon: Icons.garage,
-                        label: "My Garages",
-                        color: Colors.indigo,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const OwnerGaragesScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _quickActionCard(
-                        icon: Icons.add_business,
-                        label: "Add Garage",
-                        color: Colors.green,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const AddGarageScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 28),
-
-                // ================= RECENT BOOKINGS =================
-                const Text(
-                  "Recent Bookings",
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-
-                if (recentBookings.isEmpty)
-                  const Text(
-                    "No recent bookings",
-                    style: TextStyle(color: Colors.grey),
-                  )
-                else
-                  ...recentBookings
-                      .map((e) => _recentBookingTile(e))
-                      .toList(),
-
-                const SizedBox(height: 28),
-
-                // ================= RECENT PAYMENTS =================
-                const Text(
-                  "Recent Payments",
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-
-                if (recentPayments.isEmpty)
-                  const Text(
-                    "No recent payments",
-                    style: TextStyle(color: Colors.grey),
-                  )
-                else
-                  ...recentPayments
-                      .map((p) => _recentPaymentTile(p))
-                      .toList(),
-              ],
-            ),
-          );
-        },
+  Widget _buildPaymentItem(dynamic p) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: brandGreen.withOpacity(0.02), borderRadius: BorderRadius.circular(16), border: Border.all(color: brandGreen.withOpacity(0.08))),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.arrow_circle_up_rounded, color: brandGreen, size: 22),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("₹${p["amount"]}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 15)),
+                  Text(p["customerEmail"] ?? "Client", style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                ],
+              ),
+            ],
+          ),
+          Text(p["paidAt"] != null ? DateFormat("hh:mm a").format(DateTime.parse(p["paidAt"])) : "--", style: const TextStyle(color: Colors.white24, fontSize: 11)),
+        ],
       ),
     );
   }
 
-  // ================= QUICK ACTION CARD =================
-  Widget _quickActionCard({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: color.withOpacity(0.4)),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.15),
-              child: Icon(icon, color: color),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
+  Widget _statusBadge(String status) {
+    Color color = Colors.orangeAccent;
+    if (status == "COMPLETED" || status == "PAID") color = brandGreen;
+    if (status == "CANCELLED") color = Colors.redAccent;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      child: Text(status, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
     );
+  }
+
+  Widget _buildEmptyState(String msg) => Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Text(msg, style: const TextStyle(color: Colors.white12, fontSize: 12))));
+
+  Widget _buildErrorState() {
+    return Center(child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.white10),
+        const SizedBox(height: 16),
+        const Text("Dashboard Sync Failure", style: TextStyle(color: Colors.white38)),
+        TextButton(onPressed: _reload, child: const Text("Reconnect", style: TextStyle(color: brandGreen, fontWeight: FontWeight.bold))),
+      ],
+    ));
   }
 }

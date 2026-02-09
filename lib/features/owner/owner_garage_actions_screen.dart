@@ -8,18 +8,94 @@ class OwnerGarageActionsScreen extends StatelessWidget {
 
   const OwnerGarageActionsScreen({super.key, required this.garage});
 
-  Widget _actionCard({
+  // Design System Constants
+  static const Color brandGreen = Color(0xFF00B562);
+  static const Color surfaceDark = Color(0xFF1C1C1E);
+  static const Color backgroundDark = Color(0xFF121212);
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        scaffoldBackgroundColor: backgroundDark,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: backgroundDark,
+          elevation: 0,
+          centerTitle: true,
+        ),
+      ),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(garage.name, 
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "MANAGEMENT TOOLS",
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildActionCard(
+                  context: context,
+                  icon: Icons.assignment_rounded,
+                  title: "View Bookings",
+                  subtitle: "Review and manage service requests",
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OwnerGarageBookingsScreen(garage: garage),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildActionCard(
+                  context: context,
+                  icon: Icons.handyman_rounded,
+                  title: "Manage Services",
+                  subtitle: "Configure pricing and service list",
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OwnerManageServicesScreen(garage: garage),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCard({
     required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    return Container(
+      decoration: BoxDecoration(
+        color: surfaceDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
@@ -27,74 +103,46 @@ class OwnerGarageActionsScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor:
-                    theme.colorScheme.primary.withOpacity(0.15),
-                child: Icon(icon, color: theme.colorScheme.primary),
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: brandGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: brandGreen, size: 26),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(subtitle,
-                        style: const TextStyle(color: Colors.grey)),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white12,
+                size: 16,
+              ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(garage.name)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _actionCard(
-              context: context,
-              icon: Icons.receipt_long,
-              title: "View Bookings",
-              subtitle: "Manage all service bookings",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        OwnerGarageBookingsScreen(garage: garage),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _actionCard(
-              context: context,
-              icon: Icons.build,
-              title: "Manage Services",
-              subtitle: "Add, edit, or disable services",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        OwnerManageServicesScreen(garage: garage),
-                  ),
-                );
-              },
-            ),
-          ],
         ),
       ),
     );
