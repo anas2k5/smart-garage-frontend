@@ -42,21 +42,31 @@ class _PaymentScreenState extends State<PaymentScreen> {
         throw Exception("Stripe connection error");
       }
 
-      // STEP 2: INIT STRIPE SHEET
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: "Smart Garage",
-          style: ThemeMode.dark, // Updated to match our app theme
-          appearance: const PaymentSheetAppearance(
-            colors: PaymentSheetAppearanceColors(
-              primary: brandGreen,
-              background: surfaceDark,
-              componentBackground: backgroundDark,
-            ),
-          ),
-        ),
-      );
+     // STEP 2: INIT STRIPE SHEET
+await Stripe.instance.initPaymentSheet(
+  paymentSheetParameters: SetupPaymentSheetParameters(
+    paymentIntentClientSecret: clientSecret,
+    merchantDisplayName: "Smart Garage",
+    style: ThemeMode.dark, 
+    appearance: const PaymentSheetAppearance(
+      colors: PaymentSheetAppearanceColors(
+        primary: brandGreen,
+        background: surfaceDark,
+        componentBackground: backgroundDark,
+        // --- ADD THESE LINES TO FIX VISIBILITY ---
+        componentText: Colors.white,         // Text inside the input fields
+        componentDivider: Colors.white24,    // Lines between card/expiry/cvc
+        primaryText: Colors.white,           // Main titles
+        secondaryText: Colors.white70,       // Subtitles/placeholders
+        placeholderText: Colors.white30,     // "MM/YY" and "CVC" text
+      ),
+      // Optional: Round the corners to match your UI
+      shapes: PaymentSheetShape(
+        borderRadius: 16.0,
+      ),
+    ),
+  ),
+);
 
       // STEP 3: PRESENT UI
       await Stripe.instance.presentPaymentSheet();

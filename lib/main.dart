@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+
 import 'core/utils/role_navigator.dart';
 import 'features/auth/login_screen.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔑 MUST MATCH stripe.public.key in backend
+  // 🔑 Only set key here (no await)
   Stripe.publishableKey =
       "pk_test_51SqA0WCFdVOc1RqKtPuGO3tGbPzkGgubwYl4xZlyA9yz6UptMJcn4RuPWuIk2T68AKGZYCylfibF5UsvpBiybvG900dD2XTe6S";
-
-  // 🔥 REQUIRED FOR NATIVE SDK INIT
-  await Stripe.instance.applySettings();
 
   runApp(const SmartGarageApp());
 }
@@ -20,36 +18,62 @@ void main() async {
 class SmartGarageApp extends StatelessWidget {
   const SmartGarageApp({super.key});
 
-  Future<Widget> _getStartScreen() async {
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: StartupLoader(),
+    );
+  }
+}
+
+/// 🚀 Startup Loader
+class StartupLoader extends StatefulWidget {
+  const StartupLoader({super.key});
+
+  @override
+  State<StartupLoader> createState() => _StartupLoaderState();
+}
+
+class _StartupLoaderState extends State<StartupLoader> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // 🔥 Initialize Stripe safely AFTER UI loads
+    await Stripe.instance.applySettings();
+
     final prefs = await SharedPreferences.getInstance();
 
     final token = prefs.getString('token');
     final role = prefs.getString('role');
     final userId = prefs.getInt('userId');
 
-    // ✅ STRICT validation
+    Widget nextScreen;
+
     if (token == null || role == null || userId == null) {
       await prefs.clear();
-      return const LoginScreen();
+      nextScreen = const LoginScreen();
+    } else {
+      nextScreen = RoleNavigator.getHomeByRole(role);
     }
 
-    return RoleNavigator.getHomeByRole(role);
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => nextScreen),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: FutureBuilder<Widget>(
-        future: _getStartScreen(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          return snapshot.data!;
-        },
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
       ),
     );
   }
