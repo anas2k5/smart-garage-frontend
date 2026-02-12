@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import '../notifications/notification_screen.dart';
 
 import '../../core/services/api_service.dart';
 import '../../models/booking.dart';
@@ -108,14 +109,36 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
   // ================= AppBar & Headers =================
 
   AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text("SMART GARAGE", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16, color: brandGreen)),
-      actions: [
-        IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.white70), onPressed: _logout),
-      ],
-    );
-  }
+  return AppBar(
+    title: const Text(
+      "SMART GARAGE",
+      style: TextStyle(
+        fontWeight: FontWeight.w900,
+        letterSpacing: 2,
+        fontSize: 16,
+        color: brandGreen,
+      ),
+    ),
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.notifications_none_rounded),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const NotificationScreen(),
+            ),
+          );
+        },
+      ),
+      IconButton(
+        icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+        onPressed: _logout,
+      ),
+    ],
+  );
+}
+
 
   Widget _buildWelcomeHeader() {
     return Row(
@@ -206,6 +229,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
       ],
     );
   }
+  
 
   Widget _statCard(IconData icon, String label, String value, Color color, VoidCallback onTap) {
     return Container(

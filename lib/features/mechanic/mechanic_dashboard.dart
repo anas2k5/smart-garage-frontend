@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../notifications/notification_screen.dart';
 
 import 'job_list_screen.dart';
 import '../auth/login_screen.dart';
@@ -43,16 +44,39 @@ class MechanicDashboard extends StatelessWidget {
         ),
       ),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text("SERVICE HUB", 
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 2, color: brandGreen)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout_rounded, color: Colors.white38),
-              onPressed: () => _logout(context),
-            )
-          ],
-        ),
+     appBar: AppBar(
+  title: const Text(
+    "SERVICE HUB",
+    style: TextStyle(
+      fontWeight: FontWeight.w900,
+      fontSize: 16,
+      letterSpacing: 2,
+      color: brandGreen,
+    ),
+  ),
+  actions: [
+
+    // 🔔 Notifications
+    IconButton(
+      icon: const Icon(Icons.notifications_none_rounded),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const NotificationScreen(),
+          ),
+        );
+      },
+    ),
+
+    // 🚪 Logout
+    IconButton(
+      icon: const Icon(Icons.logout_rounded, color: Colors.white38),
+      onPressed: () => _logout(context),
+    ),
+  ],
+),
+
         body: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Column(

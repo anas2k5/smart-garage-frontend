@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/api_service.dart';
 import '../auth/login_screen.dart';
+import '../notifications/notification_screen.dart';
 
 // Screens
 import 'admin_users_screen.dart';
@@ -95,16 +96,42 @@ class _AdminDashboardState extends State<AdminDashboard> {
         appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0, centerTitle: true),
       ),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text("SYSTEM CONTROL", 
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 2, color: brandGreen)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.power_settings_new_rounded, color: Colors.white38),
-              onPressed: _logout,
-            ),
-          ],
-        ),
+       appBar: AppBar(
+  title: const Text(
+    "SYSTEM CONTROL",
+    style: TextStyle(
+      fontWeight: FontWeight.w900,
+      fontSize: 16,
+      letterSpacing: 2,
+      color: brandGreen,
+    ),
+  ),
+  actions: [
+
+    // 🔔 NOTIFICATIONS
+    IconButton(
+      icon: const Icon(Icons.notifications_none_rounded),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const NotificationScreen(),
+          ),
+        );
+      },
+    ),
+
+    // 🚪 LOGOUT
+    IconButton(
+      icon: const Icon(
+        Icons.power_settings_new_rounded,
+        color: Colors.white38,
+      ),
+      onPressed: _logout,
+    ),
+  ],
+),
+
         body: RefreshIndicator(
           color: brandGreen,
           onRefresh: _loadStats,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import '../notifications/notification_screen.dart';
 
 import '../../core/services/api_service.dart';
 import '../../core/utils/auth_utils.dart';
@@ -171,49 +172,54 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   // ==============================
   // 🔝 APP BAR (UNCHANGED)
   // ==============================
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: Row(
-        children: [
-          Padding(
-            padding:
-                const EdgeInsets.only(
-                    bottom: 2),
-            child: Image.asset(
-              "assets/logo/logo.png",
-              height: 36,
-              fit: BoxFit.contain,
-            ),
+AppBar _buildAppBar() {
+  return AppBar(
+    title: Row(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: Image.asset(
+            "assets/logo/logo.png",
+            height: 36,
+            fit: BoxFit.contain,
           ),
-          const SizedBox(width: 10),
-          const Text(
-            "Smart Garage",
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: backgroundDark,
-      surfaceTintColor:
-          Colors.transparent,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons
-              .notifications_none),
-          onPressed: () {},
         ),
-        IconButton(
-          icon: const Icon(
-              Icons.logout_rounded),
-          onPressed: () =>
-              AuthUtils.logout(context),
+        const SizedBox(width: 10),
+        const Text(
+          "Smart Garage",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+          ),
         ),
       ],
-    );
-  }
+    ),
+    backgroundColor: backgroundDark,
+    surfaceTintColor: Colors.transparent,
+    actions: [
+
+      // 🔔 NOTIFICATIONS
+      IconButton(
+        icon: const Icon(Icons.notifications_none),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const NotificationScreen(),
+            ),
+          );
+        },
+      ),
+
+      // 🚪 LOGOUT
+      IconButton(
+        icon: const Icon(Icons.logout_rounded),
+        onPressed: () => AuthUtils.logout(context),
+      ),
+    ],
+  );
+}
+
 
   // ==============================
   // 📍 LOCATION HEADER (UNCHANGED UI)

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../models/app_notification.dart';
 
 import '../../models/booking.dart';
 import '../../models/mechanic.dart';
@@ -879,5 +880,51 @@ static Future<void> updateMechanic(
     throw _handleError(response);
   }
 }
+//notifi
+static Future<List<AppNotification>> getMyNotifications() async {
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse('${ApiConstants.baseUrl}/notifications/me'),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+
+    return data
+        .map((e) => AppNotification.fromJson(e))
+        .toList();
+  } else {
+    throw _handleError(response);
+  }
+}
+// ================= MARK ALL READ =================
+static Future<void> markAllNotificationsRead() async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/notifications/read-all'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
+// ================= MARK SINGLE READ =================
+static Future<void> markNotificationRead(int id) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse('${ApiConstants.baseUrl}/notifications/$id/read'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
+
 
 }
