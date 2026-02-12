@@ -8,6 +8,7 @@ import '../auth/login_screen.dart';
 import 'owner_all_bookings_screen.dart';
 import 'owner_garages_screen.dart';
 import 'add_garage_screen.dart';
+import 'owner_mechanics_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -82,9 +83,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
                   const SizedBox(height: 24),
                   _buildSectionHeader("Workshop Overview"),
                   const SizedBox(height: 12),
-                  _buildStatGrid(data),
+                  _buildStatGrid(data), // 🔥 Updated to include Total Team
                   const SizedBox(height: 28),
-                  _buildSectionHeader("Business Actions"),
+                  _buildSectionHeader("Quick Operations"),
                   const SizedBox(height: 12),
                   _buildActionRow(),
                   const SizedBox(height: 28),
@@ -101,6 +102,41 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
           ),
         ),
       ),
+    );
+  }
+
+  // ================= AppBar & Headers =================
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text("SMART GARAGE", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16, color: brandGreen)),
+      actions: [
+        IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () {}),
+        IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.white70), onPressed: _logout),
+      ],
+    );
+  }
+
+  Widget _buildWelcomeHeader() {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(shape: BoxShape.circle, color: brandGreen),
+          child: const CircleAvatar(
+            radius: 28,
+            backgroundImage: NetworkImage('https://cdn-icons-png.flaticon.com/512/3135/3135715.png'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Garage Owner Portal", style: TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.1)),
+            Text("Welcome Back 👋", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+          ],
+        ),
+      ],
     );
   }
 
@@ -138,39 +174,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
     );
   }
 
-  Widget _buildWelcomeHeader() {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(2),
-          decoration: const BoxDecoration(shape: BoxShape.circle, color: brandGreen),
-          child: const CircleAvatar(
-            radius: 28,
-            backgroundImage: NetworkImage('https://cdn-icons-png.flaticon.com/512/3135/3135715.png'),
-          ),
-        ),
-        const SizedBox(width: 16),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Garage Owner Portal", style: TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.1)),
-            Text("Welcome Back 👋", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text("SMART GARAGE", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16, color: brandGreen)),
-      actions: [
-        IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.white70), onPressed: _logout),
-      ],
-    );
-  }
-
   Widget _buildSectionHeader(String title, {String? trailing}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -185,6 +188,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
     );
   }
 
+  // ================= Stat Grid =================
+
   Widget _buildStatGrid(Map data) {
     return GridView.count(
       crossAxisCount: 2,
@@ -195,7 +200,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
       childAspectRatio: 1.4,
       children: [
         _statCard(Icons.home_repair_service_rounded, "Garages", data["activeGarages"].toString(), brandGreen, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerGaragesScreen()))),
-        _statCard(Icons.analytics_rounded, "Bookings", data["totalBookings"].toString(), Colors.blueAccent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAllBookingsScreen()))),
+        _statCard(Icons.engineering_rounded, "Total Team", data["totalMechanics"]?.toString() ?? "0", Colors.blueAccent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerMechanicsScreen()))), // 🔥 Team Count Added
         _statCard(Icons.pending_actions_rounded, "Pending Jobs", data["pendingBookings"].toString(), Colors.orangeAccent, () {}),
         _statCard(Icons.payments_rounded, "Net Revenue", "₹${data["totalRevenue"] ?? 0}", brandGreen, () {}),
       ],
@@ -204,7 +209,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
 
   Widget _statCard(IconData icon, String label, String value, Color color, VoidCallback onTap) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: surfaceDark,
         borderRadius: BorderRadius.circular(20),
@@ -212,54 +216,71 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
       ),
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, color: color, size: 20),
-                const Icon(Icons.arrow_outward_rounded, size: 14, color: Colors.white24),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
-                Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
-              ],
-            )
-          ],
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  const Icon(Icons.arrow_outward_rounded, size: 14, color: Colors.white24),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
+                  Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // ================= Action Row =================
+
   Widget _buildActionRow() {
-    return Row(
+    return Column(
       children: [
-        Expanded(child: _actionButton("Garages", Icons.home_repair_service_rounded, brandGreen, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerGaragesScreen())))),
-        const SizedBox(width: 12),
-        Expanded(child: _actionButton("Add Branch", Icons.add_business_rounded, Colors.white, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddGarageScreen())))),
+        Row(
+          children: [
+            Expanded(child: _actionButton("Garages", Icons.home_repair_service_rounded, brandGreen, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerGaragesScreen())))),
+            const SizedBox(width: 12),
+            Expanded(child: _actionButton("Team", Icons.people_outline_rounded, Colors.blueAccent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerMechanicsScreen())))),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _actionButton("Add New Branch", Icons.add_business_rounded, Colors.white, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddGarageScreen()))),
       ],
     );
   }
 
   Widget _actionButton(String label, IconData icon, Color color, VoidCallback onTap) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: surfaceDark,
-        foregroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.white.withOpacity(0.05))),
-        elevation: 0,
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: surfaceDark,
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.white.withOpacity(0.05))),
+          elevation: 0,
+        ),
+        onPressed: onTap,
+        icon: Icon(icon, size: 18),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
       ),
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
+
+  // ================= Recent Lists =================
 
   Widget _buildRecentBookings(List? bookings) {
     if (bookings == null || bookings.isEmpty) return _buildEmptyState("No active bookings");
@@ -284,7 +305,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Order #${json["id"]}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text("Order #${json["bookingId"]}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 Text(json["serviceType"] ?? "Service Entry", style: const TextStyle(color: Colors.white38, fontSize: 11)),
               ],
             ),
@@ -337,6 +358,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
       child: Text(status, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
     );
   }
+
+  // ================= State UI =================
 
   Widget _buildEmptyState(String msg) => Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Text(msg, style: const TextStyle(color: Colors.white12, fontSize: 12))));
 

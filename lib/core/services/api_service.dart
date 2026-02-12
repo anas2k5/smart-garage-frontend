@@ -846,6 +846,38 @@ static Future<List<dynamic>> getGarageJobCards(int garageId) async {
     throw _handleError(response);
   }
 }
+// ================= DELETE MECHANIC =================
+static Future<void> deleteMechanic(int mechanicId) async {
+  final headers = await _authHeaders();
 
+  final response = await http.delete(
+    Uri.parse(
+      '${ApiConstants.baseUrl}/mechanics/$mechanicId',
+    ),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200 &&
+      response.statusCode != 204) {
+    throw _handleError(response);
+  }
+}
+static Future<void> updateMechanic(
+    int id, Map<String, dynamic> body) async {
+
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse(
+      '${ApiConstants.baseUrl}/mechanics/$id',
+    ),
+    headers: headers,
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
 
 }
