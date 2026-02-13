@@ -214,45 +214,80 @@ class BookingDetailsScreen extends StatelessWidget {
       ),
     );
   }
+Widget _buildCostCard() {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [surfaceDark, surfaceDark.withOpacity(0.8)],
+      ),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: brandGreen.withOpacity(0.2),
+      ),
+    ),
+    child: Column(
+      children: [
 
-  Widget _buildCostCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [surfaceDark, surfaceDark.withOpacity(0.8)]),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: brandGreen.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          _infoRow("Estimated Cost", "₹${booking.estimatedCost ?? '0'}"),
-          const Divider(color: Colors.white10, height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Final Amount", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text("₹${booking.finalCost ?? 'N/A'}", style: const TextStyle(color: brandGreen, fontWeight: FontWeight.w900, fontSize: 20)),
-            ],
-          ),
-          if (booking.paymentStatus == 'SUCCESS') ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              decoration: BoxDecoration(color: brandGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.verified_user_rounded, color: brandGreen, size: 14),
-                  SizedBox(width: 4),
-                  Text("PAYMENT VERIFIED", style: TextStyle(color: brandGreen, fontSize: 10, fontWeight: FontWeight.bold)),
-                ],
+        // 🔥 FINAL AMOUNT ONLY
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Final Amount",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-            )
-          ]
-        ],
-      ),
-    );
-  }
+            ),
+            Text(
+              "₹${booking.finalCost ?? 'N/A'}",
+              style: const TextStyle(
+                color: brandGreen,
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+
+        // ✅ PAYMENT VERIFIED BADGE
+        if (booking.paymentStatus == 'SUCCESS') ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              vertical: 4,
+              horizontal: 8,
+            ),
+            decoration: BoxDecoration(
+              color: brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.verified_user_rounded,
+                  color: brandGreen,
+                  size: 14,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  "PAYMENT VERIFIED",
+                  style: TextStyle(
+                    color: brandGreen,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ]
+      ],
+    ),
+  );
+}
 
   Widget _buildSectionTitle(String title) {
     return Padding(
