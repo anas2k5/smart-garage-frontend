@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -23,7 +24,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
   late Future<Map<String, dynamic>> _future;
   late AnimationController _animController;
-int unreadCount = 0;
+  int unreadCount = 0;
 
   static const Color brandGreen = Color(0xFF00B562);
   static const Color surfaceDark = Color(0xFF1C1C1E);
@@ -32,29 +33,28 @@ int unreadCount = 0;
   @override
   void initState() {
     super.initState();
-    
-  WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     _future = ApiService.getOwnerDashboard();
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
-      _loadUnreadCount(); 
+    _loadUnreadCount(); 
   }
 
   @override
   void dispose() {
-      WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
     super.dispose();
   }
-  @override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-  if (state == AppLifecycleState.resumed) {
-    _loadUnreadCount(); // refresh when returning
-  }
-}
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadUnreadCount();
+    }
+  }
 
   void _reload() => setState(() => _future = ApiService.getOwnerDashboard());
 
@@ -64,19 +64,14 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (_) => false);
   }
+
   Future<void> _loadUnreadCount() async {
-  try {
-    final count =
-        await ApiService.getUnreadNotificationCount();
-
-    if (!mounted) return;
-
-    setState(() {
-      unreadCount = count;
-    });
-  } catch (_) {}
-}
-
+    try {
+      final count = await ApiService.getUnreadNotificationCount();
+      if (!mounted) return;
+      setState(() => unreadCount = count);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +85,7 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
         appBar: _buildAppBar(),
         body: RefreshIndicator(
           color: brandGreen,
+          backgroundColor: surfaceDark,
           onRefresh: () async => _reload(),
           child: FutureBuilder<Map<String, dynamic>>(
             future: _future,
@@ -102,16 +98,21 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
               }
 
               final data = snapshot.data!;
+              
+              // 🏷️ EXTRACTING OWNER NAME FROM API DATA
+              // Make sure your backend returns "ownerName" or "fullName"
+              final String displayName = data["ownerName"] ?? data["fullName"] ?? "Partner";
+
               return ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 children: [
-                  _buildWelcomeHeader(),
+                  _buildWelcomeHeader(displayName), // 🔥 Dynamic Name Integration
                   const SizedBox(height: 20),
                   _buildImageHero(), 
                   const SizedBox(height: 24),
                   _buildSectionHeader("Workshop Overview"),
                   const SizedBox(height: 12),
-                  _buildStatGrid(data), // 🔥 Updated to include Total Team
+                  _buildStatGrid(data),
                   const SizedBox(height: 28),
                   _buildSectionHeader("Quick Operations"),
                   const SizedBox(height: 12),
@@ -133,156 +134,81 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
     );
   }
 
-  // ================= AppBar & Headers =================
+  // ================= UNIFIED BRANDING LOGO =================
 
-  // ================= AppBar & Headers =================
-
-AppBar _buildAppBar() {
-  return AppBar(
-    title: const Text(
-      "SMART GARAGE",
-      style: TextStyle(
-        fontWeight: FontWeight.w900,
-        letterSpacing: 2,
-        fontSize: 16,
-        color: brandGreen,
-      ),
-    ),
-    actions: [
-
-      // 🔔 NOTIFICATION BELL WITH BADGE
-      Stack(
+  AppBar _buildAppBar() {
+    return AppBar(
+      toolbarHeight: 70,
+      backgroundColor: backgroundDark,
+      title: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const NotificationScreen(),
-                ),
-              );
-
-              _loadUnreadCount(); // refresh after open
-            },
-          ),
-
-          // 🔴 BADGE
-          if (unreadCount > 0)
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius:
-                      BorderRadius.circular(12),
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 18,
-                  minHeight: 18,
-                ),
-                child: Text(
-                  unreadCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: brandGreen.withOpacity(0.2)),
+                  boxShadow: [BoxShadow(color: brandGreen.withOpacity(0.1), blurRadius: 10)],
                 ),
               ),
-            ),
+              const Icon(Icons.build_rounded, size: 16, color: brandGreen),
+              const Positioned(
+                bottom: 8,
+                child: Icon(Icons.directions_car_filled_rounded, size: 10, color: Colors.white70),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            "SMART GARAGE", 
+            style: TextStyle(
+              fontWeight: FontWeight.w900, 
+              fontSize: 18, 
+              letterSpacing: 2.0, 
+              color: Colors.white
+            )
+          ),
         ],
       ),
+      actions: [
+        _buildNotificationBadge(),
+        IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.white38), onPressed: _logout),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 
-      // LOGOUT
-      IconButton(
-        icon: const Icon(
-          Icons.logout_rounded,
-          color: Colors.white70,
-        ),
-        onPressed: _logout,
-      ),
-    ],
-  );
-}
+  // ================= IMPROVED DYNAMIC WELCOME HEADER =================
 
-
-  Widget _buildWelcomeHeader() {
-    return Row(
+  Widget _buildWelcomeHeader(String name) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(2),
-          decoration: const BoxDecoration(shape: BoxShape.circle, color: brandGreen),
-          child: const CircleAvatar(
-            radius: 28,
-            backgroundImage: NetworkImage('https://cdn-icons-png.flaticon.com/512/3135/3135715.png'),
-          ),
-        ),
-        const SizedBox(width: 16),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
           children: [
-            Text("Garage Owner Portal", style: TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.1)),
-            Text("Welcome Back 👋", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            const Text("Welcome back,", 
+              style: TextStyle(color: Colors.white38, fontSize: 14, fontWeight: FontWeight.w500)),
+            const SizedBox(width: 6),
+            Container(height: 1, width: 20, color: brandGreen.withOpacity(0.4)),
           ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          name.toUpperCase(), 
+          style: const TextStyle(
+            color: Colors.white, 
+            fontSize: 28, // Slightly larger for premium impact
+            fontWeight: FontWeight.w900, 
+            letterSpacing: 1.2
+          )
         ),
       ],
     );
   }
 
-  Widget _buildImageHero() {
-    return Container(
-      height: 160,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        image: const DecorationImage(
-          image: NetworkImage('https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1000&auto=format&fit=crop'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: brandGreen, borderRadius: BorderRadius.circular(8)),
-              child: const Text("PARTNER INSIGHT", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Track your garage earnings\nand service performance.",
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, {String? trailing}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
-        if (trailing != null)
-          GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAllBookingsScreen())),
-            child: Text(trailing, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 12)),
-          ),
-      ],
-    );
-  }
-
-  // ================= Stat Grid =================
+  // ================= STATS & ACTION COMPONENTS =================
 
   Widget _buildStatGrid(Map data) {
     return GridView.count(
@@ -294,13 +220,12 @@ AppBar _buildAppBar() {
       childAspectRatio: 1.4,
       children: [
         _statCard(Icons.home_repair_service_rounded, "Garages", data["activeGarages"].toString(), brandGreen, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerGaragesScreen()))),
-        _statCard(Icons.engineering_rounded, "Total Team", data["totalMechanics"]?.toString() ?? "0", Colors.blueAccent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerMechanicsScreen()))), // 🔥 Team Count Added
+        _statCard(Icons.engineering_rounded, "Total Team", data["totalMechanics"]?.toString() ?? "0", Colors.blueAccent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerMechanicsScreen()))),
         _statCard(Icons.pending_actions_rounded, "Pending Jobs", data["pendingBookings"].toString(), Colors.orangeAccent, () {}),
         _statCard(Icons.payments_rounded, "Net Revenue", "₹${data["totalRevenue"] ?? 0}", brandGreen, () {}),
       ],
     );
   }
-  
 
   Widget _statCard(IconData icon, String label, String value, Color color, VoidCallback onTap) {
     return Container(
@@ -339,8 +264,6 @@ AppBar _buildAppBar() {
     );
   }
 
-  // ================= Action Row =================
-
   Widget _buildActionRow() {
     return Column(
       children: [
@@ -375,7 +298,7 @@ AppBar _buildAppBar() {
     );
   }
 
-  // ================= Recent Lists =================
+  // ================= RECENT ACTIVITY BUILDERS =================
 
   Widget _buildRecentBookings(List? bookings) {
     if (bookings == null || bookings.isEmpty) return _buildEmptyState("No active bookings");
@@ -384,29 +307,25 @@ AppBar _buildAppBar() {
 
   Widget _buildBookingItem(dynamic json) {
     final bool isDone = json["status"] == "COMPLETED" || json["status"] == "PAID";
+    final statusColor = isDone ? brandGreen : Colors.orangeAccent;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: surfaceDark, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.03))),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: (isDone ? brandGreen : Colors.orangeAccent).withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(isDone ? Icons.verified_user_rounded : Icons.timer_outlined, color: isDone ? brandGreen : Colors.orangeAccent, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Order #${json["bookingId"]}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(json["serviceType"] ?? "Service Entry", style: const TextStyle(color: Colors.white38, fontSize: 11)),
-              ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(border: Border(left: BorderSide(color: statusColor, width: 4))),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: CircleAvatar(
+              backgroundColor: statusColor.withOpacity(0.1),
+              child: Icon(isDone ? Icons.verified_user_rounded : Icons.timer_outlined, color: statusColor, size: 20),
             ),
+            title: Text("Order #${json["bookingId"]}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            subtitle: Text(json["serviceType"] ?? "Service Entry", style: const TextStyle(color: Colors.white38, fontSize: 11)),
+            trailing: _statusBadge(json["status"]),
           ),
-          _statusBadge(json["status"]),
-        ],
+        ),
       ),
     );
   }
@@ -419,27 +338,94 @@ AppBar _buildAppBar() {
   Widget _buildPaymentItem(dynamic p) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: brandGreen.withOpacity(0.02), borderRadius: BorderRadius.circular(16), border: Border.all(color: brandGreen.withOpacity(0.08))),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.arrow_circle_up_rounded, color: brandGreen, size: 22),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("₹${p["amount"]}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 15)),
-                  Text(p["customerEmail"] ?? "Client", style: const TextStyle(color: Colors.white38, fontSize: 10)),
-                ],
-              ),
-            ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: const BoxDecoration(border: Border(left: BorderSide(color: brandGreen, width: 4))),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: const Icon(Icons.arrow_circle_up_rounded, color: brandGreen, size: 22),
+            title: Text("₹${p["amount"]}", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            subtitle: Text(p["customerEmail"] ?? "Client", style: const TextStyle(color: Colors.white38, fontSize: 10)),
+            trailing: Text(p["paidAt"] != null ? DateFormat("hh:mm a").format(DateTime.parse(p["paidAt"])) : "--", style: const TextStyle(color: Colors.white24, fontSize: 11)),
           ),
-          Text(p["paidAt"] != null ? DateFormat("hh:mm a").format(DateTime.parse(p["paidAt"])) : "--", style: const TextStyle(color: Colors.white24, fontSize: 11)),
-        ],
+        ),
       ),
+    );
+  }
+
+  // ================= COMMON HELPERS =================
+
+  Widget _buildNotificationBadge() {
+    return Stack(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded),
+          onPressed: () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+            _loadUnreadCount();
+          },
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8, top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+              child: Text(unreadCount.toString(), style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildImageHero() {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        image: const DecorationImage(
+          image: NetworkImage('https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1000&auto=format&fit=crop'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: brandGreen, borderRadius: BorderRadius.circular(8)),
+              child: const Text("BUSINESS INSIGHT", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Management & Earnings\nLive Performance Data",
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {String? trailing}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+        if (trailing != null)
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerAllBookingsScreen())),
+            child: Text(trailing, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+      ],
     );
   }
 
@@ -453,8 +439,6 @@ AppBar _buildAppBar() {
       child: Text(status, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
     );
   }
-
-  // ================= State UI =================
 
   Widget _buildEmptyState(String msg) => Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Text(msg, style: const TextStyle(color: Colors.white12, fontSize: 12))));
 

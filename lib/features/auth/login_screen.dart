@@ -147,38 +147,99 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildLogoHeader() {
+Widget _buildLogoHeader() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: brandGreen, width: 2),
-            boxShadow: [
-              BoxShadow(color: brandGreen.withOpacity(0.3), blurRadius: 20, spreadRadius: 2)
-            ],
-          ),
-          child: const Icon(Icons.garage_rounded, size: 48, color: brandGreen),
+        // 🏎️ PREMIUM STACKED LOGO
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            // 1. Outer Glowing Halo
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: brandGreen.withOpacity(0.2), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: brandGreen.withOpacity(0.15),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  )
+                ],
+              ),
+            ),
+            // 2. The "Mechanical" Inner Ring
+            Container(
+              width: 75,
+              height: 75,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.4),
+                border: Border.all(color: Colors.white10, width: 0.5),
+              ),
+            ),
+            // 3. The Performance Icon (Wrench + Car silhouette)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.build_rounded, size: 28, color: brandGreen),
+                const SizedBox(height: 2),
+                Container(
+                  width: 30,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: brandGreen,
+                    borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(color: brandGreen.withOpacity(0.5), blurRadius: 8)
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Icon(Icons.directions_car_filled_rounded, size: 22, color: Colors.white70),
+              ],
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
+        // 💎 PREMIUM TYPOGRAPHY
         const Text(
           "SMART GARAGE",
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: FontWeight.w900,
             color: Colors.white,
-            letterSpacing: 3,
+            letterSpacing: 6.0, // Extra spacing for that luxury look
+            shadows: [
+              Shadow(color: Colors.black, blurRadius: 10, offset: Offset(0, 4))
+            ]
           ),
         ),
-        const Text(
-          "PREMIUM VEHICLE CARE",
-          style: TextStyle(color: brandGreen, letterSpacing: 1.5, fontSize: 11, fontWeight: FontWeight.bold),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 20, height: 1, color: brandGreen.withOpacity(0.5)),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                "PRECISION PERFORMANCE HUB",
+                style: TextStyle(
+                  color: brandGreen, 
+                  letterSpacing: 2.0, 
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w700
+                ),
+              ),
+            ),
+            Container(width: 20, height: 1, color: brandGreen.withOpacity(0.5)),
+          ],
         ),
       ],
     );
   }
-
   Widget _buildLoginCard() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(32),

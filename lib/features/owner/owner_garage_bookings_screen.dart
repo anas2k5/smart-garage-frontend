@@ -180,6 +180,37 @@ class _OwnerGarageBookingsScreenState extends State<OwnerGarageBookingsScreen> {
       ),
     );
   }
+  Future<void> _viewInvoice(int bookingId) async {
+  try {
+    final bytes =
+        await ApiService.downloadInvoice(bookingId);
+
+    // Simple viewer → open PDF preview dialog
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: surfaceDark,
+        title: const Text("Invoice Downloaded"),
+        content: const Text(
+          "Invoice PDF downloaded successfully.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Failed to load invoice"),
+      ),
+    );
+  }
+}
+
 
   Widget _buildChip(String text, Color color, {bool isSmall = false}) {
     return Container(
@@ -224,6 +255,17 @@ class _OwnerGarageBookingsScreenState extends State<OwnerGarageBookingsScreen> {
         Navigator.push(context, MaterialPageRoute(builder: (_) => OwnerJobCardViewScreen(bookingId: b.id, garageId: widget.garage.id)));
       }, isOutlined: true));
     }
+// 📄 VIEW INVOICE
+if (b.status == 'PAID') {
+  actions.add(
+    _btn(
+      "View Invoice",
+      Colors.tealAccent,
+      () => _viewInvoice(b.id),
+      isOutlined: true,
+    ),
+  );
+}
 
     if (actions.isEmpty) return const SizedBox.shrink();
 

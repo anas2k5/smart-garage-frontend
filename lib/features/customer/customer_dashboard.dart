@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -16,16 +17,12 @@ class CustomerDashboard extends StatefulWidget {
   @override
   State<CustomerDashboard> createState() => _CustomerDashboardState();
 }
-class _CustomerDashboardState extends State<CustomerDashboard>
-    with WidgetsBindingObserver {
 
+class _CustomerDashboardState extends State<CustomerDashboard> with WidgetsBindingObserver {
   late Future<Map<String, dynamic>> _dashboardFuture;
-int unreadCount = 0;
-
-  // ✅ LOCATION TEXT STATE
+  int unreadCount = 0;
   String locationText = "Fetching location...";
 
-  // Professional Color Palette
   static const Color brandGreen = Color(0xFF00B562);
   static const Color surfaceDark = Color(0xFF1C1C1E);
   static const Color backgroundDark = Color(0xFF121212);
@@ -34,83 +31,67 @@ int unreadCount = 0;
   void initState() {
     super.initState();
     _dashboardFuture = ApiService.getCustomerDashboard();
-WidgetsBinding.instance.addObserver(this);
-
-    // ✅ AUTO FETCH LIVE LOCATION
+    WidgetsBinding.instance.addObserver(this);
     _fetchLiveLocation();
     _loadUnreadCount();
   }
-Future<void> _loadUnreadCount() async {
-  try {
-    final count =
-        await ApiService.getUnreadNotificationCount();
 
-    if (!mounted) return;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
-    setState(() {
-      unreadCount = count;
-    });
-  } catch (_) {}
-}
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadUnreadCount();
+    }
+  }
 
-  void _reload() =>
-      setState(() => _dashboardFuture = ApiService.getCustomerDashboard());
+  void _reload() => setState(() => _dashboardFuture = ApiService.getCustomerDashboard());
 
   // ==============================
-  // 📍 LIVE LOCATION LOGIC
+  // 📍 DATA & LOCATION LOGIC
   // ==============================
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await ApiService.getUnreadNotificationCount();
+      if (!mounted) return;
+      setState(() => unreadCount = count);
+    } catch (_) {}
+  }
 
   Future<void> _fetchLiveLocation() async {
     try {
-      bool serviceEnabled =
-          await Geolocator.isLocationServiceEnabled();
-
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() => locationText = "Location disabled");
         return;
       }
 
-      LocationPermission permission =
-          await Geolocator.checkPermission();
-
+      LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission =
-            await Geolocator.requestPermission();
+        permission = await Geolocator.requestPermission();
       }
 
-      if (permission == LocationPermission.denied ||
-          permission ==
-              LocationPermission.deniedForever) {
-        setState(
-            () => locationText = "Permission denied");
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        setState(() => locationText = "Permission denied");
         return;
       }
 
-      Position position =
-          await Geolocator.getCurrentPosition(
-              desiredAccuracy:
-                  LocationAccuracy.high);
-
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(
-              position.latitude,
-              position.longitude);
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
 
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-
-        setState(() {
-          locationText =
-              "${place.locality}, ${place.administrativeArea}";
-        });
+        setState(() => locationText = "${place.locality}, ${place.administrativeArea}");
       }
     } catch (e) {
-      setState(
-          () => locationText = "Unable to fetch location");
+      setState(() => locationText = "Unable to fetch location");
     }
   }
-
-  // ==============================
 
   @override
   Widget build(BuildContext context) {
@@ -118,67 +99,45 @@ Future<void> _loadUnreadCount() async {
       data: ThemeData.dark().copyWith(
         useMaterial3: true,
         scaffoldBackgroundColor: backgroundDark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: brandGreen,
-          brightness: Brightness.dark,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: brandGreen, brightness: Brightness.dark),
       ),
       child: Scaffold(
         appBar: _buildAppBar(),
         body: RefreshIndicator(
-        onRefresh: () async {
-  _reload();
-},
-
           color: brandGreen,
+          backgroundColor: surfaceDark,
+          onRefresh: () async => _reload(),
           child: FutureBuilder<Map<String, dynamic>>(
             future: _dashboardFuture,
             builder: (context, snapshot) {
-              if (snapshot.connectionState ==
-                  ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                      color: brandGreen),
-                );
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: brandGreen));
               }
-              if (snapshot.hasError) {
-                return _buildErrorState();
-              }
+              if (snapshot.hasError) return _buildErrorState();
 
               final data = snapshot.data!;
-              return ListView(
-                padding:
-                    const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 20),
-                children: [
+              final String customerName = data["customerName"] ?? "Customer";
 
-                  // ✅ LOCATION HEADER (UI UNCHANGED)
+              return ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                children: [
+                  _buildWelcomeHeader(customerName), // 🔥 Dynamic Welcome Added
+                  const SizedBox(height: 20),
                   _buildLocationHeader(),
                   const SizedBox(height: 20),
-
                   _buildVehicleHero(data),
                   const SizedBox(height: 24),
-                  _buildSectionHeader(
-                      "Service Overview"),
+                  _buildSectionHeader("Service Overview"),
                   const SizedBox(height: 12),
                   _buildInsightGrid(data),
                   const SizedBox(height: 24),
-                  _buildSectionHeader(
-                      "Quick Actions"),
+                  _buildSectionHeader("Quick Actions"),
                   const SizedBox(height: 12),
                   _buildActionRow(),
                   const SizedBox(height: 24),
-                  _buildSectionHeader(
-                      "Recent Activity",
-                      trailing: "View All"),
+                  _buildSectionHeader("Recent Activity", trailing: "View All"),
                   const SizedBox(height: 12),
-                  ...((data["latestBookings"]
-                              as List? ??
-                          [])
-                      .map((b) =>
-                          _buildBookingListItem(
-                              b))),
+                  ...((data["latestBookings"] as List? ?? []).map((b) => _buildBookingListItem(b))),
                 ],
               );
             },
@@ -189,328 +148,179 @@ Future<void> _loadUnreadCount() async {
   }
 
   // ==============================
-  // 🔝 APP BAR (UNCHANGED)
+  // 🔝 UNIFIED PREMIUM APP BAR
   // ==============================
-AppBar _buildAppBar() {
-  return AppBar(
-    title: Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 2),
-          child: Image.asset(
-            "assets/logo/logo.png",
-            height: 36,
-            fit: BoxFit.contain,
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      toolbarHeight: 70,
+      backgroundColor: backgroundDark,
+      surfaceTintColor: Colors.transparent,
+      title: Row(
+        children: [
+          // 🏎️ UNIFIED STACKED LOGO
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: brandGreen.withOpacity(0.2)),
+                  boxShadow: [BoxShadow(color: brandGreen.withOpacity(0.1), blurRadius: 10)],
+                ),
+              ),
+              const Icon(Icons.build_rounded, size: 16, color: brandGreen),
+              const Positioned(
+                bottom: 8,
+                child: Icon(Icons.directions_car_filled_rounded, size: 10, color: Colors.white70),
+              ),
+            ],
           ),
+          const SizedBox(width: 12),
+          const Text(
+            "SMART GARAGE", 
+            style: TextStyle(
+              fontWeight: FontWeight.w900, 
+              fontSize: 18, 
+              letterSpacing: 2.0, 
+              color: Colors.white
+            )
+          ),
+        ],
+      ),
+      actions: [
+        Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_none_rounded, color: Colors.white70),
+              onPressed: () async {
+                await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+                _loadUnreadCount();
+              },
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                right: 8, top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                  child: Text(unreadCount.toString(), style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                ),
+              ),
+          ],
         ),
-        const SizedBox(width: 10),
-        const Text(
-          "Smart Garage",
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
-          ),
+        IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.white38, size: 22), onPressed: () => AuthUtils.logout(context)),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  // ==============================
+  // 👋 DYNAMIC WELCOME HEADER
+  // ==============================
+
+  Widget _buildWelcomeHeader(String name) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text("Welcome back,", 
+              style: TextStyle(color: Colors.white38, fontSize: 14, fontWeight: FontWeight.w500)),
+            const SizedBox(width: 6),
+            Container(height: 1, width: 20, color: brandGreen.withOpacity(0.4)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          name.toUpperCase(), 
+          style: const TextStyle(
+            color: Colors.white, 
+            fontSize: 28, 
+            fontWeight: FontWeight.w900, 
+            letterSpacing: 1.2
+          )
         ),
       ],
-    ),
-    backgroundColor: backgroundDark,
-    surfaceTintColor: Colors.transparent,
-    actions: [
-
-      // 🔔 NOTIFICATIONS
-      Stack(
-  children: [
-    IconButton(
-      icon: const Icon(Icons.notifications_none),
-      onPressed: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const NotificationScreen(),
-          ),
-        );
-
-        _loadUnreadCount(); // refresh after open
-      },
-    ),
-
-    // 🔴 Badge
-    if (unreadCount > 0)
-      Positioned(
-        right: 6,
-        top: 6,
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.redAccent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          constraints: const BoxConstraints(
-            minWidth: 18,
-            minHeight: 18,
-          ),
-          child: Text(
-            unreadCount.toString(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-  ],
-),
-
-      // 🚪 LOGOUT
-      IconButton(
-        icon: const Icon(Icons.logout_rounded),
-        onPressed: () => AuthUtils.logout(context),
-      ),
-    ],
-  );
-}
-@override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-  if (state == AppLifecycleState.resumed) {
-    _loadUnreadCount();
+    );
   }
-}
-@override
-void dispose() {
-  WidgetsBinding.instance.removeObserver(this);
-  super.dispose();
-}
-
 
   // ==============================
-  // 📍 LOCATION HEADER (UNCHANGED UI)
+  // 🏗️ RESTORED UI COMPONENTS
   // ==============================
 
   Widget _buildLocationHeader() {
     return InkWell(
       onTap: () async {
-        final result =
-            await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const FreeMapScreen(),
-          ),
-        );
-
-        if (result != null) {
-          setState(() =>
-              locationText = result);
-        }
+        final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const FreeMapScreen()));
+        if (result != null) setState(() => locationText = result);
       },
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: surfaceDark,
-          borderRadius:
-              BorderRadius.circular(16),
+          color: surfaceDark, 
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: Row(
           children: [
-            const Icon(
-                Icons.location_on,
-                color: brandGreen),
+            const Icon(Icons.location_on, color: brandGreen),
             const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                locationText,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontWeight:
-                      FontWeight.w600,
-                ),
-                overflow:
-                    TextOverflow.ellipsis,
-              ),
-            ),
-            const Icon(
-                Icons
-                    .keyboard_arrow_down,
-                color: Colors.white54)
+            Expanded(child: Text(locationText, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.white54)
           ],
         ),
       ),
     );
   }
 
-  // ==============================
-  // 🔽 BELOW 100% YOUR ORIGINAL UI
-  // ==============================
-
-  Widget _buildSectionHeader(
-      String title,
-      {String? trailing}) {
-    return Row(
-      mainAxisAlignment:
-          MainAxisAlignment
-              .spaceBetween,
-      children: [
-        Text(title,
-            style: const TextStyle(
-                fontSize: 18,
-                fontWeight:
-                    FontWeight.bold,
-                color: Colors.white)),
-        if (trailing != null)
-          Text(trailing,
-              style: const TextStyle(
-                  color: brandGreen,
-                  fontWeight:
-                      FontWeight.w600)),
-      ],
-    );
-  }
-
-  Widget _buildVehicleHero(
-      Map data) {
+  Widget _buildVehicleHero(Map data) {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-                24),
-        gradient: LinearGradient(
-          begin:
-              Alignment.topLeft,
-          end: Alignment
-              .bottomRight,
-          colors: [
-            brandGreen
-                .withOpacity(0.8),
-            brandGreen
-                .withOpacity(0.4)
-          ],
-        ),
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(colors: [brandGreen.withOpacity(0.8), brandGreen.withOpacity(0.4)]),
       ),
-      child: Stack(
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            right: -20,
-            bottom: -10,
-            child: Icon(
-                Icons
-                    .directions_car_filled,
-                size: 120,
-                color: Colors.white
-                    .withOpacity(
-                        0.1)),
-          ),
-          Column(
-            crossAxisAlignment:
-                CrossAxisAlignment
-                    .start,
-            children: const [
-              Text(
-                  "PRIMARY VEHICLE",
-                  style: TextStyle(
-                      color: Colors
-                          .white70,
-                      fontSize: 12,
-                      fontWeight:
-                          FontWeight
-                              .bold)),
-              SizedBox(height: 8),
-              Text("Hyundai i20",
-                  style: TextStyle(
-                      color:
-                          Colors.white,
-                      fontSize: 24,
-                      fontWeight:
-                          FontWeight
-                              .bold)),
-              Text("TS 09 EQ 1234",
-                  style: TextStyle(
-                      color: Colors
-                          .white70)),
-              SizedBox(height: 20),
-            ],
-          ),
+          Text("PRIMARY VEHICLE", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text("Hyundai i20", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text("TS 09 EQ 1234", style: TextStyle(color: Colors.white70)),
         ],
       ),
     );
   }
 
-  Widget _buildInsightGrid(
-      Map data) {
+  Widget _buildInsightGrid(Map data) {
     return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics:
-          const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.5,
       children: [
-        _insightTile(
-            "Ongoing",
-            data["ongoingBookings"]
-                .toString(),
-            Icons.engineering,
-            Colors.orange),
-        _insightTile(
-            "Completed",
-            data[
-                    "completedBookings"]
-                .toString(),
-            Icons.verified,
-            brandGreen),
+        _insightTile("Ongoing", data["ongoingBookings"].toString(), Icons.engineering, Colors.orange),
+        _insightTile("Completed", data["completedBookings"].toString(), Icons.verified, brandGreen),
       ],
     );
   }
 
-  Widget _insightTile(
-      String label,
-      String value,
-      IconData icon,
-      Color color) {
+  Widget _insightTile(String label, String value, IconData icon, Color color) {
     return Container(
-      padding:
-          const EdgeInsets.all(
-              16),
-      decoration: BoxDecoration(
-          color: surfaceDark,
-          borderRadius:
-              BorderRadius.circular(
-                  20)),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: surfaceDark, borderRadius: BorderRadius.circular(20)),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment
-                .start,
-        mainAxisAlignment:
-            MainAxisAlignment
-                .spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon,
-              color: color,
-              size: 28),
+          Icon(icon, color: color, size: 28),
           Column(
-            crossAxisAlignment:
-                CrossAxisAlignment
-                    .start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight:
-                          FontWeight
-                              .bold)),
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors
-                          .white54,
-                      fontSize: 12)),
+              Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
             ],
           )
         ],
@@ -520,172 +330,72 @@ void dispose() {
 
   Widget _buildActionRow() {
     return Row(
-      mainAxisAlignment:
-          MainAxisAlignment
-              .spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _actionButton(
-            "Book Now",
-            Icons.add_task,
-            () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const SelectVehicleScreen()))),
-        _actionButton(
-            "History",
-            Icons.history,
-            () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const CustomerBookingsScreen()))),
-        _actionButton(
-            "Payments",
-            Icons
-                .account_balance_wallet,
-            () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const PaymentHistoryScreen()))),
+        _actionButton("Book Now", Icons.add_task, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectVehicleScreen()))),
+        _actionButton("History", Icons.history, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerBookingsScreen()))),
+        _actionButton("Payments", Icons.account_balance_wallet, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentHistoryScreen()))),
       ],
     );
   }
 
-  Widget _actionButton(
-      String label,
-      IconData icon,
-      VoidCallback onTap) {
+  Widget _actionButton(String label, IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Column(
         children: [
-          CircleAvatar(
-              radius: 28,
-              backgroundColor:
-                  surfaceDark,
-              child: Icon(icon,
-                  color:
-                      brandGreen)),
-          const SizedBox(
-              height: 8),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors
-                      .white70)),
+          CircleAvatar(radius: 28, backgroundColor: surfaceDark, child: Icon(icon, color: brandGreen)),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.white70)),
         ],
       ),
     );
   }
 
-  Widget _buildBookingListItem(
-      Map b) {
-    bool isDone =
-        b["status"] ==
-            "COMPLETED";
+  Widget _buildBookingListItem(Map b) {
+    bool isDone = b["status"] == "COMPLETED";
     return Container(
-      margin:
-          const EdgeInsets.only(
-              bottom: 12),
-      padding:
-          const EdgeInsets.all(
-              16),
-      decoration: BoxDecoration(
-          color: surfaceDark,
-          borderRadius:
-              BorderRadius.circular(
-                  16)),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: surfaceDark, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
-          Container(
-            padding:
-                const EdgeInsets
-                    .all(10),
-            decoration: BoxDecoration(
-                color: (isDone
-                        ? brandGreen
-                        : Colors
-                            .orange)
-                    .withOpacity(
-                        0.1),
-                shape:
-                    BoxShape.circle),
-            child: Icon(
-                isDone
-                    ? Icons.check
-                    : Icons
-                        .access_time_filled,
-                color: isDone
-                    ? brandGreen
-                    : Colors
-                        .orange,
-                size: 20),
-          ),
-          const SizedBox(
-              width: 16),
+          Icon(isDone ? Icons.check_circle : Icons.access_time_filled, color: isDone ? brandGreen : Colors.orange, size: 24),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                    b["garageName"] ??
-                        "Garage Service",
-                    style: const TextStyle(
-                        fontWeight:
-                            FontWeight
-                                .bold)),
-                Text(
-                    b["status"],
-                    style: TextStyle(
-                        color: isDone
-                            ? brandGreen
-                            : Colors
-                                .orange,
-                        fontSize:
-                            12)),
+                Text(b["garageName"] ?? "Garage Service", style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(b["status"], style: TextStyle(color: isDone ? brandGreen : Colors.orange, fontSize: 12)),
               ],
             ),
           ),
-          Text(
-              "₹${b["finalCost"] ?? '0'}",
-              style: const TextStyle(
-                  fontWeight:
-                      FontWeight
-                          .w900,
-                  fontSize: 16)),
+          Text("₹${b["finalCost"] ?? '0'}", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {String? trailing}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        if (trailing != null) Text(trailing, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 
   Widget _buildErrorState() {
     return Center(
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment
-                .center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors
-                  .redAccent),
-          const SizedBox(
-              height: 16),
-          const Text(
-              "Couldn't sync dashboard"),
-          TextButton(
-              onPressed:
-                  _reload,
-              child: const Text(
-                  "Retry",
-                  style: TextStyle(
-                      color:
-                          brandGreen))),
+          const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+          const SizedBox(height: 16),
+          const Text("Couldn't sync dashboard"),
+          TextButton(onPressed: _reload, child: const Text("Retry", style: TextStyle(color: brandGreen))),
         ],
       ),
     );

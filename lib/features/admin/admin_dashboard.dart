@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,41 +26,41 @@ class _AdminDashboardState extends State<AdminDashboard>
   int garages = 0;
   int bookings = 0;
   bool loading = true;
-int unreadCount = 0;
+  int unreadCount = 0;
 
-  // Global Brand Palette
   static const Color brandGreen = Color(0xFF00B562);
   static const Color surfaceDark = Color(0xFF1C1C1E);
   static const Color backgroundDark = Color(0xFF121212);
 
   @override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addObserver(this);
-  _loadStats();
-  _loadUnreadCount();
-}
-@override
-void didChangeAppLifecycleState(
-    AppLifecycleState state) {
-  if (state == AppLifecycleState.resumed) {
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadStats();
     _loadUnreadCount();
   }
-}
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadUnreadCount();
+      _loadStats();
+    }
+  }
 
   Future<void> _loadUnreadCount() async {
-  try {
-    final count =
-        await ApiService.getUnreadNotificationCount();
-
-    if (!mounted) return;
-
-    setState(() {
-      unreadCount = count;
-    });
-  } catch (_) {}
-}
-
+    try {
+      final count = await ApiService.getUnreadNotificationCount();
+      if (!mounted) return;
+      setState(() => unreadCount = count);
+    } catch (_) {}
+  }
 
   Future<void> _loadStats() async {
     try {
@@ -87,18 +88,22 @@ void didChangeAppLifecycleState(
   Future<void> _logout() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: surfaceDark,
-        title: const Text("Terminate Session?"),
-        content: const Text("You will need to re-authenticate to access the Control Panel."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Logout"),
-          ),
-        ],
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: AlertDialog(
+          backgroundColor: surfaceDark,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text("TERMINATE SESSION?", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+          content: const Text("You will need to re-authenticate to access the System Control Panel."),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("CANCEL", style: TextStyle(color: Colors.white38))),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text("LOGOUT"),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -119,120 +124,20 @@ void didChangeAppLifecycleState(
       data: ThemeData.dark().copyWith(
         useMaterial3: true,
         scaffoldBackgroundColor: backgroundDark,
-        appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0, centerTitle: true),
+        appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0),
       ),
       child: Scaffold(
-     appBar: AppBar(
-  title: const Text(
-    "SYSTEM CONTROL",
-    style: TextStyle(
-      fontWeight: FontWeight.w900,
-      fontSize: 16,
-      letterSpacing: 2,
-      color: brandGreen,
-    ),
-  ),
-
-  actions: [
-
-    // 🔔 NOTIFICATION BELL
-    Stack(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.notifications_none_rounded),
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const NotificationScreen(),
-              ),
-            );
-            _loadUnreadCount();
-          },
-        ),
-
-        if (unreadCount > 0)
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.redAccent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 18,
-                minHeight: 18,
-              ),
-              child: Text(
-                unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-      ],
-    ),
-
-    // 🚪 LOGOUT BUTTON
-    Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: _logout,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.redAccent.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.redAccent.withOpacity(0.4),
-            ),
-          ),
-          child: const Row(
-            children: [
-              Icon(
-                Icons.power_settings_new_rounded,
-                size: 18,
-                color: Colors.redAccent,
-              ),
-              SizedBox(width: 6),
-              Text(
-                "Logout",
-                style: TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-
-  ], // ✅ THIS WAS MISSING
-
-),
-
-
+        appBar: _buildAppBar(),
         body: RefreshIndicator(
           color: brandGreen,
           onRefresh: _loadStats,
           child: loading
               ? const Center(child: CircularProgressIndicator(color: brandGreen))
               : ListView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   children: [
                     _buildGlobalHeader(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                     _buildSectionLabel("LIVE METRICS"),
                     const SizedBox(height: 16),
                     _statCard(
@@ -292,41 +197,120 @@ void didChangeAppLifecycleState(
     );
   }
 
-  Widget _buildGlobalHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: surfaceDark,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: brandGreen.withOpacity(0.1)),
-      ),
-      child: Row(
+  // ================= UNIFIED APPBAR =================
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      toolbarHeight: 70,
+      backgroundColor: backgroundDark,
+      surfaceTintColor: Colors.transparent,
+      title: Row(
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: brandGreen.withOpacity(0.1),
-            child: const Icon(Icons.shield_rounded, color: brandGreen, size: 30),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: brandGreen.withOpacity(0.2)),
+                  boxShadow: [BoxShadow(color: brandGreen.withOpacity(0.1), blurRadius: 10)],
+                ),
+              ),
+              const Icon(Icons.build_rounded, size: 16, color: brandGreen),
+              const Positioned(
+                bottom: 8,
+                child: Icon(Icons.directions_car_filled_rounded, size: 10, color: Colors.white70),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("SUPER USER ACCESS", 
-                  style: TextStyle(color: brandGreen, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                Text("Platform Overview", 
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
-              ],
-            ),
+          const SizedBox(width: 12),
+          const Text(
+            "SMART GARAGE", 
+            style: TextStyle(
+              fontWeight: FontWeight.w900, 
+              fontSize: 18, 
+              letterSpacing: 2.0, 
+              color: Colors.white
+            )
           ),
         ],
       ),
+      actions: [
+        _buildNotificationBadge(),
+        // UNIFIED LOGOUT BUTTON (Same as Customer/Owner)
+        IconButton(
+          icon: const Icon(Icons.logout_rounded, color: Colors.white38, size: 22),
+          onPressed: _logout,
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  // ================= UI HELPERS =================
+
+  Widget _buildGlobalHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text("System online,", 
+              style: TextStyle(color: Colors.white38, fontSize: 14, fontWeight: FontWeight.w500)),
+            const SizedBox(width: 6),
+            Container(height: 1, width: 20, color: brandGreen.withOpacity(0.4)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          "ROOT ADMINISTRATOR", 
+          style: TextStyle(
+            color: Colors.white, 
+            fontSize: 26, 
+            fontWeight: FontWeight.w900, 
+            letterSpacing: 1.2
+          )
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNotificationBadge() {
+    return Stack(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded, color: Colors.white70),
+          onPressed: () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+            _loadUnreadCount();
+          },
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8, top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+              child: Text(
+                unreadCount > 99 ? "99+" : unreadCount.toString(),
+                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildSectionLabel(String label) {
-    return Text(label, 
-      style: const TextStyle(color: Colors.white24, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5));
+    return Text(label,
+        style: const TextStyle(
+            color: Colors.white24,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.0));
   }
 
   Widget _statCard({
@@ -339,44 +323,58 @@ void didChangeAppLifecycleState(
     return Container(
       decoration: BoxDecoration(
         color: surfaceDark,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
-                child: Icon(icon, color: color, size: 24),
+              Positioned(
+                left: 0, top: 0, bottom: 0,
+                child: Container(width: 5, color: color),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 13, color: Colors.white38, fontWeight: FontWeight.w500)),
-                    Text(value.toString(), 
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(14)),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title,
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white38,
+                                  fontWeight: FontWeight.w500)),
+                          Text(value.toString(),
+                              style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white12),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white12),
             ],
           ),
         ),
       ),
     );
   }
-@override
-void dispose() {
-  WidgetsBinding.instance.removeObserver(this);
-  super.dispose();
-}
 
   Widget _menuTile({
     required IconData icon,
@@ -388,7 +386,8 @@ void dispose() {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: surfaceDark,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.02)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../notifications/notification_screen.dart';
@@ -10,37 +11,16 @@ class MechanicDashboard extends StatefulWidget {
   const MechanicDashboard({super.key});
 
   @override
-  State<MechanicDashboard> createState() =>
-      _MechanicDashboardState();
+  State<MechanicDashboard> createState() => _MechanicDashboardState();
 }
 
-class _MechanicDashboardState
-    extends State<MechanicDashboard>
-    with WidgetsBindingObserver {
-
-  // 🔔 UNREAD COUNT
+class _MechanicDashboardState extends State<MechanicDashboard> with WidgetsBindingObserver {
   int unreadCount = 0;
 
-  // Global Brand Palette
   static const Color brandGreen = Color(0xFF00B562);
   static const Color surfaceDark = Color(0xFF1C1C1E);
   static const Color backgroundDark = Color(0xFF121212);
 
-  // ================= LOAD COUNT =================
-  Future<void> _loadUnreadCount() async {
-    try {
-      final count =
-          await ApiService.getUnreadNotificationCount();
-
-      if (!mounted) return;
-
-      setState(() {
-        unreadCount = count;
-      });
-    } catch (_) {}
-  }
-
-  // ================= LIFECYCLE =================
   @override
   void initState() {
     super.initState();
@@ -55,34 +35,36 @@ class _MechanicDashboardState
   }
 
   @override
-  void didChangeAppLifecycleState(
-      AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _loadUnreadCount();
     }
   }
 
-  // ================= YOUR ORIGINAL METHODS =================
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await ApiService.getUnreadNotificationCount();
+      if (!mounted) return;
+      setState(() => unreadCount = count);
+    } catch (_) {}
+  }
 
   Future<String> _getName() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("email") ?? "Technician";
+    // Assuming you store the name, otherwise defaulting to Technician
+    return prefs.getString("name") ?? "Technician"; 
   }
 
   Future<void> _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-          builder: (_) => const LoginScreen()),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
   }
-
-  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
@@ -90,144 +72,36 @@ class _MechanicDashboardState
       data: ThemeData.dark().copyWith(
         useMaterial3: true,
         scaffoldBackgroundColor: backgroundDark,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: backgroundDark,
-          elevation: 0,
-          centerTitle: true,
-        ),
+        appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0),
       ),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            "SERVICE HUB",
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              letterSpacing: 2,
-              color: brandGreen,
-            ),
-          ),
-          actions: [
-
-            // 🔔 NOTIFICATIONS WITH BADGE
-            Stack(
-              children: [
-
-                // ✅ Tooltip Added
-                IconButton(
-                  tooltip: "Notifications",
-                  icon: const Icon(
-                      Icons.notifications_none_rounded),
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const NotificationScreen(),
-                      ),
-                    );
-
-                    _loadUnreadCount();
-                  },
-                ),
-
-                // 🔴 BADGE
-                if (unreadCount > 0)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding:
-                          const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius:
-                            BorderRadius.circular(12),
-                      ),
-                      constraints:
-                          const BoxConstraints(
-                        minWidth: 18,
-                        minHeight: 18,
-                      ),
-                      child: Text(
-
-                        // ✅ 99+ LIMIT ADDED
-                        unreadCount > 99
-                            ? "99+"
-                            : unreadCount.toString(),
-
-                        style:
-                            const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                        textAlign:
-                            TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            // 🚪 LOGOUT
-            IconButton(
-              icon: const Icon(
-                Icons.logout_rounded,
-                color: Colors.white38,
-              ),
-              onPressed: () =>
-                  _logout(context),
-            ),
-          ],
-        ),
-
+        appBar: _buildAppBar(),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 24, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStaffProfile(),
+              _buildStaffWelcome(), // 🔥 Unified Dynamic Welcome
               const SizedBox(height: 32),
               _buildSectionLabel("OPERATIONS"),
               const SizedBox(height: 16),
               _buildTaskCard(
                 title: "Active Job Cards",
-                subtitle:
-                    "Vehicles currently in service",
-                icon:
-                    Icons.engineering_rounded,
+                subtitle: "Vehicles currently in service",
+                icon: Icons.engineering_rounded,
                 color: brandGreen,
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              const JobListScreen()));
-                },
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobListScreen())),
               ),
               const SizedBox(height: 12),
               _buildTaskCard(
                 title: "Queue / Today",
-                subtitle:
-                    "Scheduled for next 8 hours",
-                icon:
-                    Icons.calendar_today_rounded,
+                subtitle: "Scheduled for next 8 hours",
+                icon: Icons.calendar_today_rounded,
                 color: Colors.blueAccent,
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              const JobListScreen()));
-                },
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobListScreen())),
               ),
               const SizedBox(height: 32),
-              _buildSectionLabel(
-                  "WORKSHOP STATUS"),
+              _buildSectionLabel("WORKSHOP STATUS"),
               const SizedBox(height: 16),
               _buildInfoSummary(),
             ],
@@ -237,81 +111,127 @@ class _MechanicDashboardState
     );
   }
 
-  // ================= UI WIDGETS =================
+  // ================= UNIFIED BRAND LOGO =================
 
-  Widget _buildStaffProfile() {
-    return FutureBuilder<String>(
-      future: _getName(),
-      builder: (context, snapshot) {
-        return Container(
-          padding:
-              const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: surfaceDark,
-            borderRadius:
-                BorderRadius.circular(24),
-            border: Border.all(
-                color: brandGreen
-                    .withOpacity(0.1)),
-          ),
-          child: Row(
+  AppBar _buildAppBar() {
+    return AppBar(
+      toolbarHeight: 70,
+      backgroundColor: backgroundDark,
+      centerTitle: false,
+      title: Row(
+        children: [
+          Stack(
+            alignment: Alignment.center,
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor:
-                    brandGreen.withOpacity(0.1),
-                child: const Icon(
-                    Icons.person_pin_rounded,
-                    color: brandGreen,
-                    size: 30),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "LOGGED IN AS",
-                      style: TextStyle(
-                          color: brandGreen,
-                          fontSize: 11,
-                          fontWeight:
-                              FontWeight.bold,
-                          letterSpacing: 1),
-                    ),
-                    Text(
-                      snapshot.data ??
-                          "Mechanic",
-                      style:
-                          const TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                      overflow:
-                          TextOverflow.ellipsis,
-                    ),
-                  ],
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: brandGreen.withOpacity(0.2)),
+                  boxShadow: [BoxShadow(color: brandGreen.withOpacity(0.1), blurRadius: 10)],
                 ),
+              ),
+              const Icon(Icons.build_rounded, size: 16, color: brandGreen),
+              const Positioned(
+                bottom: 8,
+                child: Icon(Icons.directions_car_filled_rounded, size: 10, color: Colors.white70),
               ),
             ],
           ),
+          const SizedBox(width: 12),
+          const Text(
+            "SMART GARAGE", 
+            style: TextStyle(
+              fontWeight: FontWeight.w900, 
+              fontSize: 18, 
+              letterSpacing: 2.0, 
+              color: Colors.white
+            )
+          ),
+        ],
+      ),
+      actions: [
+        _buildNotificationBadge(),
+        IconButton(
+          icon: const Icon(Icons.logout_rounded, color: Colors.white38),
+          onPressed: () => _logout(context),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  // ================= DYNAMIC STAFF WELCOME =================
+
+  Widget _buildStaffWelcome() {
+    return FutureBuilder<String>(
+      future: _getName(),
+      builder: (context, snapshot) {
+        final String name = snapshot.data ?? "TECHNICIAN";
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text("Shift started,", 
+                  style: TextStyle(color: Colors.white38, fontSize: 14, fontWeight: FontWeight.w500)),
+                const SizedBox(width: 6),
+                Container(height: 1, width: 20, color: brandGreen.withOpacity(0.4)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              name.toUpperCase(), 
+              style: const TextStyle(
+                color: Colors.white, 
+                fontSize: 28, 
+                fontWeight: FontWeight.w900, 
+                letterSpacing: 1.2
+              )
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildSectionLabel(
-      String label) {
+  // ================= UI HELPERS =================
+
+  Widget _buildNotificationBadge() {
+    return Stack(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded),
+          onPressed: () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+            _loadUnreadCount();
+          },
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8, top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+              child: Text(
+                unreadCount > 99 ? "99+" : unreadCount.toString(),
+                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
     return Text(label,
         style: const TextStyle(
             color: Colors.white24,
-            fontSize: 12,
-            fontWeight:
-                FontWeight.bold,
-            letterSpacing: 1.5));
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.0));
   }
 
   Widget _buildTaskCard({
@@ -324,65 +244,52 @@ class _MechanicDashboardState
     return Container(
       decoration: BoxDecoration(
         color: surfaceDark,
-        borderRadius:
-            BorderRadius.circular(20),
-        border: Border.all(
-            color: Colors.white
-                .withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: InkWell(
-        borderRadius:
-            BorderRadius.circular(20),
-        onTap: onTap,
-        child: Padding(
-          padding:
-              const EdgeInsets.all(20),
-          child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: color
-                        .withOpacity(0.1),
-                    borderRadius:
-                        BorderRadius
-                            .circular(14)),
-                child: Icon(icon,
-                    color: color,
-                    size: 24),
+              Positioned(
+                left: 0, top: 0, bottom: 0,
+                child: Container(width: 5, color: color),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
                   children: [
-                    Text(title,
-                        style:
-                            const TextStyle(
-                                fontSize: 15,
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
-                                color: Colors
-                                    .white)),
-                    const SizedBox(
-                        height: 2),
-                    Text(subtitle,
-                        style:
-                            const TextStyle(
-                                fontSize: 12,
-                                color: Colors
-                                    .white38)),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(14)),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title,
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white)),
+                          const SizedBox(height: 2),
+                          Text(subtitle,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white38)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white12),
                   ],
                 ),
               ),
-              const Icon(
-                  Icons
-                      .arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Colors.white12),
             ],
           ),
         ),
@@ -392,31 +299,20 @@ class _MechanicDashboardState
 
   Widget _buildInfoSummary() {
     return Container(
-      padding:
-          const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: brandGreen
-            .withOpacity(0.05),
-        borderRadius:
-            BorderRadius.circular(16),
-        border: Border.all(
-            color: brandGreen
-                .withOpacity(0.1)),
+        color: brandGreen.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: brandGreen.withOpacity(0.1)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(
-              Icons
-                  .tips_and_updates_rounded,
-              color: brandGreen,
-              size: 20),
-          SizedBox(width: 12),
-          Expanded(
+          const Icon(Icons.tips_and_updates_rounded, color: brandGreen, size: 22),
+          const SizedBox(width: 16),
+          const Expanded(
             child: Text(
-              "Keep job card status updated to ensure customers receive real-time notifications.",
-              style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12),
+              "Ensure all status transitions are logged for customer transparency.",
+              style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
             ),
           ),
         ],

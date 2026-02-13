@@ -496,23 +496,25 @@ class ApiService {
       throw _handleError(response);
     }
   }
+static Future<List<int>> downloadInvoice(
+    int bookingId) async {
 
-  static Future<List<int>> downloadInvoice(
-      int bookingId) async {
-    final headers = await _authHeaders();
+  final headers = await _authHeaders();
 
-    final response = await http.get(
-      Uri.parse(
-          '${ApiConstants.payments}/invoice/$bookingId/download'),
-      headers: headers,
-    );
+  final response = await http.get(
+    Uri.parse(
+      '${ApiConstants.baseUrl}/invoices/$bookingId/pdf',
+    ),
+    headers: headers,
+  );
 
-    if (response.statusCode == 200) {
-      return response.bodyBytes;
-    } else {
-      throw _handleError(response);
-    }
+  if (response.statusCode == 200) {
+    return response.bodyBytes;
+  } else {
+    throw _handleError(response);
   }
+}
+
  // ================= REGISTER =================
 static Future<void> register({
   required String fullName,
