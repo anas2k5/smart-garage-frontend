@@ -16,9 +16,11 @@ class CustomerDashboard extends StatefulWidget {
   @override
   State<CustomerDashboard> createState() => _CustomerDashboardState();
 }
+class _CustomerDashboardState extends State<CustomerDashboard>
+    with WidgetsBindingObserver {
 
-class _CustomerDashboardState extends State<CustomerDashboard> {
   late Future<Map<String, dynamic>> _dashboardFuture;
+int unreadCount = 0;
 
   // ✅ LOCATION TEXT STATE
   String locationText = "Fetching location...";
@@ -32,10 +34,24 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   void initState() {
     super.initState();
     _dashboardFuture = ApiService.getCustomerDashboard();
+WidgetsBinding.instance.addObserver(this);
 
     // ✅ AUTO FETCH LIVE LOCATION
     _fetchLiveLocation();
+    _loadUnreadCount();
   }
+Future<void> _loadUnreadCount() async {
+  try {
+    final count =
+        await ApiService.getUnreadNotificationCount();
+
+    if (!mounted) return;
+
+    setState(() {
+      unreadCount = count;
+    });
+  } catch (_) {}
+}
 
   void _reload() =>
       setState(() => _dashboardFuture = ApiService.getCustomerDashboard());
@@ -110,7 +126,10 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       child: Scaffold(
         appBar: _buildAppBar(),
         body: RefreshIndicator(
-          onRefresh: () async => _reload(),
+        onRefresh: () async {
+  _reload();
+},
+
           color: brandGreen,
           child: FutureBuilder<Map<String, dynamic>>(
             future: _dashboardFuture,
@@ -199,17 +218,50 @@ AppBar _buildAppBar() {
     actions: [
 
       // 🔔 NOTIFICATIONS
-      IconButton(
-        icon: const Icon(Icons.notifications_none),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const NotificationScreen(),
+      Stack(
+  children: [
+    IconButton(
+      icon: const Icon(Icons.notifications_none),
+      onPressed: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const NotificationScreen(),
+          ),
+        );
+
+        _loadUnreadCount(); // refresh after open
+      },
+    ),
+
+    // 🔴 Badge
+    if (unreadCount > 0)
+      Positioned(
+        right: 6,
+        top: 6,
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.redAccent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          constraints: const BoxConstraints(
+            minWidth: 18,
+            minHeight: 18,
+          ),
+          child: Text(
+            unreadCount.toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
             ),
-          );
-        },
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
+  ],
+),
 
       // 🚪 LOGOUT
       IconButton(
@@ -218,6 +270,17 @@ AppBar _buildAppBar() {
       ),
     ],
   );
+}
+@override
+void didChangeAppLifecycleState(AppLifecycleState state) {
+  if (state == AppLifecycleState.resumed) {
+    _loadUnreadCount();
+  }
+}
+@override
+void dispose() {
+  WidgetsBinding.instance.removeObserver(this);
+  super.dispose();
 }
 
 

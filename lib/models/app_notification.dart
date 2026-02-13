@@ -15,14 +15,19 @@ class AppNotification {
     required this.createdAt,
   });
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) {
-    return AppNotification(
-      id: json['id'],
-      title: json['title'] ?? '',
-      message: json['message'] ?? '',
-      type: json['type'] ?? '',
-      isRead: json['read'] ?? false, // backend field = read
-      createdAt: DateTime.parse(json['createdAt']),
-    );
-  }
+ factory AppNotification.fromJson(
+    Map<String, dynamic> json) {
+
+  return AppNotification(
+    id: json['id'],
+    title: json['title'] ?? '',
+    message: json['message'] ?? '',
+    type: json['type'] ?? '',
+    isRead: json['readStatus'] ?? false,
+    createdAt:
+        DateTime.parse(json['createdAt']),
+  );
 }
+
+  }
+

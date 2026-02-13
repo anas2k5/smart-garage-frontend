@@ -18,9 +18,12 @@ class OwnerDashboardScreen extends StatefulWidget {
   State<OwnerDashboardScreen> createState() => _OwnerDashboardScreenState();
 }
 
-class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with SingleTickerProviderStateMixin {
+class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+
   late Future<Map<String, dynamic>> _future;
   late AnimationController _animController;
+int unreadCount = 0;
 
   static const Color brandGreen = Color(0xFF00B562);
   static const Color surfaceDark = Color(0xFF1C1C1E);
@@ -29,18 +32,29 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
   @override
   void initState() {
     super.initState();
+    
+  WidgetsBinding.instance.addObserver(this);
     _future = ApiService.getOwnerDashboard();
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
+      _loadUnreadCount(); 
   }
 
   @override
   void dispose() {
+      WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
     super.dispose();
   }
+  @override
+void didChangeAppLifecycleState(AppLifecycleState state) {
+  if (state == AppLifecycleState.resumed) {
+    _loadUnreadCount(); // refresh when returning
+  }
+}
+
 
   void _reload() => setState(() => _future = ApiService.getOwnerDashboard());
 
@@ -50,6 +64,19 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (_) => false);
   }
+  Future<void> _loadUnreadCount() async {
+  try {
+    final count =
+        await ApiService.getUnreadNotificationCount();
+
+    if (!mounted) return;
+
+    setState(() {
+      unreadCount = count;
+    });
+  } catch (_) {}
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +135,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
 
   // ================= AppBar & Headers =================
 
-  AppBar _buildAppBar() {
+  // ================= AppBar & Headers =================
+
+AppBar _buildAppBar() {
   return AppBar(
     title: const Text(
       "SMART GARAGE",
@@ -120,19 +149,61 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Single
       ),
     ),
     actions: [
-      IconButton(
-        icon: const Icon(Icons.notifications_none_rounded),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const NotificationScreen(),
+
+      // 🔔 NOTIFICATION BELL WITH BADGE
+      Stack(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const NotificationScreen(),
+                ),
+              );
+
+              _loadUnreadCount(); // refresh after open
+            },
+          ),
+
+          // 🔴 BADGE
+          if (unreadCount > 0)
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius:
+                      BorderRadius.circular(12),
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 18,
+                  minHeight: 18,
+                ),
+                child: Text(
+                  unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
-          );
-        },
+        ],
       ),
+
+      // LOGOUT
       IconButton(
-        icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+        icon: const Icon(
+          Icons.logout_rounded,
+          color: Colors.white70,
+        ),
         onPressed: _logout,
       ),
     ],

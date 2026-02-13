@@ -924,7 +924,29 @@ static Future<void> markNotificationRead(int id) async {
   if (response.statusCode != 200) {
     throw _handleError(response);
   }
+}// ================= UNREAD NOTIFICATION COUNT =================
+
+// ================= UNREAD NOTIFICATION COUNT =================
+
+static Future<int> getUnreadNotificationCount() async {
+
+  final headers = await _authHeaders();
+
+  final response = await http.get(
+    Uri.parse(
+      '${ApiConstants.baseUrl}/notifications/me/unread-count',
+    ),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    return int.parse(response.body);
+  } else {
+    throw _handleError(response);
+  }
 }
+
+
 
 
 }

@@ -18,11 +18,14 @@ class AdminDashboard extends StatefulWidget {
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
+class _AdminDashboardState extends State<AdminDashboard>
+    with WidgetsBindingObserver {
+
   int users = 0;
   int garages = 0;
   int bookings = 0;
   bool loading = true;
+int unreadCount = 0;
 
   // Global Brand Palette
   static const Color brandGreen = Color(0xFF00B562);
@@ -30,10 +33,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
   static const Color backgroundDark = Color(0xFF121212);
 
   @override
-  void initState() {
-    super.initState();
-    _loadStats();
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addObserver(this);
+  _loadStats();
+  _loadUnreadCount();
+}
+@override
+void didChangeAppLifecycleState(
+    AppLifecycleState state) {
+  if (state == AppLifecycleState.resumed) {
+    _loadUnreadCount();
   }
+}
+
+  Future<void> _loadUnreadCount() async {
+  try {
+    final count =
+        await ApiService.getUnreadNotificationCount();
+
+    if (!mounted) return;
+
+    setState(() {
+      unreadCount = count;
+    });
+  } catch (_) {}
+}
+
 
   Future<void> _loadStats() async {
     try {
@@ -96,7 +122,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         appBarTheme: const AppBarTheme(backgroundColor: backgroundDark, elevation: 0, centerTitle: true),
       ),
       child: Scaffold(
-       appBar: AppBar(
+     appBar: AppBar(
   title: const Text(
     "SYSTEM CONTROL",
     style: TextStyle(
@@ -106,31 +132,96 @@ class _AdminDashboardState extends State<AdminDashboard> {
       color: brandGreen,
     ),
   ),
+
   actions: [
 
-    // 🔔 NOTIFICATIONS
-    IconButton(
-      icon: const Icon(Icons.notifications_none_rounded),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const NotificationScreen(),
+    // 🔔 NOTIFICATION BELL
+    Stack(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded),
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const NotificationScreen(),
+              ),
+            );
+            _loadUnreadCount();
+          },
+        ),
+
+        if (unreadCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 18,
+                minHeight: 18,
+              ),
+              child: Text(
+                unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
-        );
-      },
+      ],
     ),
 
-    // 🚪 LOGOUT
-    IconButton(
-      icon: const Icon(
-        Icons.power_settings_new_rounded,
-        color: Colors.white38,
+    // 🚪 LOGOUT BUTTON
+    Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: _logout,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.redAccent.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.redAccent.withOpacity(0.4),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.power_settings_new_rounded,
+                size: 18,
+                color: Colors.redAccent,
+              ),
+              SizedBox(width: 6),
+              Text(
+                "Logout",
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      onPressed: _logout,
     ),
-  ],
+
+  ], // ✅ THIS WAS MISSING
+
 ),
+
 
         body: RefreshIndicator(
           color: brandGreen,
@@ -281,6 +372,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
     );
   }
+@override
+void dispose() {
+  WidgetsBinding.instance.removeObserver(this);
+  super.dispose();
+}
 
   Widget _menuTile({
     required IconData icon,
