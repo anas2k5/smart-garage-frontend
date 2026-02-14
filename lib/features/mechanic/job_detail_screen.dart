@@ -65,6 +65,80 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       ),
     );
   }
+  // ================= BOOKING INFO =================
+
+Widget _buildBookingInfo() {
+  final booking = job['booking'];
+  if (booking == null) return const SizedBox.shrink();
+
+  return Container(
+    padding: const EdgeInsets.all(16),
+    margin: const EdgeInsets.only(bottom: 20),
+    decoration: BoxDecoration(
+      color: surfaceDark,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.white10),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        const Text(
+          "BOOKING DETAILS",
+          style: TextStyle(
+            color: Colors.white38,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        _infoRow(
+          Icons.build_circle_rounded,
+          booking['service']?['name'] ?? 'Service',
+        ),
+
+        _infoRow(
+          Icons.directions_car_rounded,
+          booking['vehicle']?['plateNumber'] ?? 'Vehicle',
+        ),
+
+        _infoRow(
+          Icons.person_rounded,
+          booking['customer']?['email'] ?? 'Customer',
+        ),
+
+        _infoRow(
+          Icons.currency_rupee_rounded,
+          "Final Cost: ₹${booking['finalCost'] ?? 0}",
+        ),
+      ],
+    ),
+  );
+}
+Widget _infoRow(IconData icon, String text) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: brandGreen),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 
   // ================= UI =================
 
@@ -99,6 +173,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       padding: const EdgeInsets.all(20),
                       children: [
                         _buildStatusBanner(status),
+                          _buildBookingInfo(),
                         const SizedBox(height: 24),
                         
                         _buildSectionHeader("Service Tasks", Icons.playlist_add_check_rounded),

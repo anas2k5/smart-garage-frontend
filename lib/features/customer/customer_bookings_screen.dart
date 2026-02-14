@@ -235,26 +235,51 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
       ),
     );
   }
-
-  Widget _buildMiniPayButton(Booking booking) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: brandGreen,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 0,
+Widget _buildMiniPayButton(Booking booking) {
+  return ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: brandGreen,
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      onPressed: () async {
-        final paid = await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => PaymentScreen(booking: booking)),
+      elevation: 0,
+    ),
+    onPressed: () async {
+
+      final paid = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentScreen(booking: booking),
+        ),
+      );
+
+      // ✅ FORCE REFRESH AFTER PAYMENT
+      if (paid == true) {
+
+        // Wait backend update
+        await Future.delayed(
+          const Duration(milliseconds: 500),
         );
-        if (paid == true) _reload();
-      },
-      child: const Text("PAY NOW", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
-    );
-  }
+
+        setState(() {
+          _bookingsFuture =
+              ApiService.getCustomerBookings();
+        });
+      }
+    },
+    child: const Text(
+      "PAY NOW",
+      style: TextStyle(
+        fontWeight: FontWeight.w900,
+        fontSize: 11,
+        letterSpacing: 1,
+      ),
+    ),
+  );
+}
+
 
   Widget _buildCancelButton(int id) {
     return TextButton.icon(
