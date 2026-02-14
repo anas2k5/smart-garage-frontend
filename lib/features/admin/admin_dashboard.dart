@@ -198,55 +198,71 @@ class _AdminDashboardState extends State<AdminDashboard>
   }
 
   // ================= UNIFIED APPBAR =================
+AppBar _buildAppBar() {
+  return AppBar(
+    toolbarHeight: 70,
+    backgroundColor: backgroundDark,
+    surfaceTintColor: Colors.transparent,
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      toolbarHeight: 70,
-      backgroundColor: backgroundDark,
-      surfaceTintColor: Colors.transparent,
-      title: Row(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: brandGreen.withOpacity(0.2)),
-                  boxShadow: [BoxShadow(color: brandGreen.withOpacity(0.1), blurRadius: 10)],
+    title: Row(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: brandGreen.withOpacity(0.2),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: brandGreen.withOpacity(0.1),
+                    blurRadius: 10,
+                  )
+                ],
               ),
-              const Icon(Icons.build_rounded, size: 16, color: brandGreen),
-              const Positioned(
-                bottom: 8,
-                child: Icon(Icons.directions_car_filled_rounded, size: 10, color: Colors.white70),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            "SMART GARAGE", 
-            style: TextStyle(
-              fontWeight: FontWeight.w900, 
-              fontSize: 18, 
-              letterSpacing: 2.0, 
-              color: Colors.white
-            )
-          ),
-        ],
-      ),
-      actions: [
-        _buildNotificationBadge(),
-        // UNIFIED LOGOUT BUTTON (Same as Customer/Owner)
-        IconButton(
-          icon: const Icon(Icons.logout_rounded, color: Colors.white38, size: 22),
-          onPressed: _logout,
+            ),
+
+            Image.asset(
+              'assets/logo/app_logo.png',
+              width: 24,
+              height: 24,
+              fit: BoxFit.contain,
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
+
+        const SizedBox(width: 12),
+
+        const Text(
+          "SMART GARAGE",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 18,
+            letterSpacing: 2.0,
+            color: Colors.white,
+          ),
+        ),
       ],
-    );
-  }
+    ),
+
+    actions: [
+      _buildNotificationBadge(),
+
+      IconButton(
+        icon: const Icon(Icons.logout_rounded,
+            color: Colors.white38, size: 22),
+        onPressed: _logout,
+      ),
+
+      const SizedBox(width: 8),
+    ],
+  );
+}
+
 
   // ================= UI HELPERS =================
 

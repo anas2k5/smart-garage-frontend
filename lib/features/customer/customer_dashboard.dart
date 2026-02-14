@@ -150,72 +150,110 @@ class _CustomerDashboardState extends State<CustomerDashboard> with WidgetsBindi
   // ==============================
   // 🔝 UNIFIED PREMIUM APP BAR
   // ==============================
+AppBar _buildAppBar() {
+  return AppBar(
+    toolbarHeight: 70,
+    backgroundColor: backgroundDark,
+    surfaceTintColor: Colors.transparent,
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      toolbarHeight: 70,
-      backgroundColor: backgroundDark,
-      surfaceTintColor: Colors.transparent,
-      title: Row(
-        children: [
-          // 🏎️ UNIFIED STACKED LOGO
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: brandGreen.withOpacity(0.2)),
-                  boxShadow: [BoxShadow(color: brandGreen.withOpacity(0.1), blurRadius: 10)],
-                ),
-              ),
-              const Icon(Icons.build_rounded, size: 16, color: brandGreen),
-              const Positioned(
-                bottom: 8,
-                child: Icon(Icons.directions_car_filled_rounded, size: 10, color: Colors.white70),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            "SMART GARAGE", 
-            style: TextStyle(
-              fontWeight: FontWeight.w900, 
-              fontSize: 18, 
-              letterSpacing: 2.0, 
-              color: Colors.white
-            )
-          ),
-        ],
-      ),
-      actions: [
+    title: Row(
+      children: [
         Stack(
+          alignment: Alignment.center,
           children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: Colors.white70),
-              onPressed: () async {
-                await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
-                _loadUnreadCount();
-              },
-            ),
-            if (unreadCount > 0)
-              Positioned(
-                right: 8, top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
-                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                  child: Text(unreadCount.toString(), style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: brandGreen.withOpacity(0.2),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: brandGreen.withOpacity(0.1),
+                    blurRadius: 10,
+                  )
+                ],
               ),
+            ),
+
+            Image.asset(
+              'assets/logo/app_logo.png',
+              width: 24,
+              height: 24,
+              fit: BoxFit.contain,
+            ),
           ],
         ),
-        IconButton(icon: const Icon(Icons.logout_rounded, color: Colors.white38, size: 22), onPressed: () => AuthUtils.logout(context)),
-        const SizedBox(width: 8),
+
+        const SizedBox(width: 12),
+
+        const Text(
+          "SMART GARAGE",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 18,
+            letterSpacing: 2.0,
+            color: Colors.white,
+          ),
+        ),
       ],
-    );
-  }
+    ),
+
+    actions: [
+      Stack(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded,
+                color: Colors.white70),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationScreen(),
+                ),
+              );
+              _loadUnreadCount();
+            },
+          ),
+
+          if (unreadCount > 0)
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                ),
+                constraints:
+                    const BoxConstraints(minWidth: 14, minHeight: 14),
+                child: Text(
+                  unreadCount.toString(),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+
+      IconButton(
+        icon: const Icon(Icons.logout_rounded,
+            color: Colors.white38, size: 22),
+        onPressed: () => AuthUtils.logout(context),
+      ),
+
+      const SizedBox(width: 8),
+    ],
+  );
+}
+
 
   // ==============================
   // 👋 DYNAMIC WELCOME HEADER

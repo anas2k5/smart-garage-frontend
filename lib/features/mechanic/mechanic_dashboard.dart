@@ -120,24 +120,34 @@ class _MechanicDashboardState extends State<MechanicDashboard> with WidgetsBindi
       centerTitle: false,
       title: Row(
         children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: brandGreen.withOpacity(0.2)),
-                  boxShadow: [BoxShadow(color: brandGreen.withOpacity(0.1), blurRadius: 10)],
-                ),
-              ),
-              const Icon(Icons.build_rounded, size: 16, color: brandGreen),
-              const Positioned(
-                bottom: 8,
-                child: Icon(Icons.directions_car_filled_rounded, size: 10, color: Colors.white70),
-              ),
-            ],
-          ),
+  Stack(
+  alignment: Alignment.center,
+  children: [
+    Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: brandGreen.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: brandGreen.withOpacity(0.1),
+            blurRadius: 10,
+          )
+        ],
+      ),
+    ),
+
+    // 🔥 App Logo Image
+    Image.asset(
+      'assets/logo/app_logo.png',
+      width: 24,
+      height: 24,
+      fit: BoxFit.contain,
+    ),
+  ],
+),
+
           const SizedBox(width: 12),
           const Text(
             "SMART GARAGE", 

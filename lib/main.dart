@@ -161,71 +161,87 @@ class _StartupLoaderState extends State<StartupLoader> with SingleTickerProvider
       ),
     );
   }
-
-  Widget _buildPremiumStackedLogo() {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Outer Glowing Ring
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: brandGreen.withOpacity(0.1), width: 1),
-                boxShadow: [
-                  BoxShadow(color: brandGreen.withOpacity(0.15), blurRadius: 40, spreadRadius: 5)
-                ],
+Widget _buildPremiumStackedLogo() {
+  return Column(
+    children: [
+      Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer Glowing Ring
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: brandGreen.withOpacity(0.1),
+                width: 1,
               ),
-            ),
-            // Mechanical Core
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.03),
-                border: Border.all(color: Colors.white10, width: 0.5),
-              ),
-            ),
-            // Technical Icon Group
-            const Column(
-              children: [
-                Icon(Icons.build_rounded, size: 38, color: brandGreen),
-                SizedBox(height: 4),
-                Icon(Icons.directions_car_filled_rounded, size: 22, color: Colors.white70),
+              boxShadow: [
+                BoxShadow(
+                  color: brandGreen.withOpacity(0.15),
+                  blurRadius: 40,
+                  spreadRadius: 5,
+                )
               ],
             ),
-          ],
-        ),
-        const SizedBox(height: 32),
-        const Text(
-          "SMART GARAGE",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 8, // Premium Tracking
           ),
+
+          // Mechanical Core
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.03),
+              border: Border.all(color: Colors.white10, width: 0.5),
+            ),
+          ),
+
+          // 🔥 YOUR IMAGE LOGO
+          Image.asset(
+            'assets/logo/app_logo.png',
+            width: 70,
+            height: 70,
+            fit: BoxFit.contain,
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 32),
+
+      const Text(
+        "SMART GARAGE",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 8,
         ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 24, height: 1, color: brandGreen.withOpacity(0.5)),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "PRECISION HUB",
-                style: TextStyle(color: brandGreen, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 3),
+      ),
+
+      const SizedBox(height: 12),
+
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 24, height: 1, color: brandGreen.withOpacity(0.5)),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "PRECISION HUB",
+              style: TextStyle(
+                color: brandGreen,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 3,
               ),
             ),
-            Container(width: 24, height: 1, color: brandGreen.withOpacity(0.5)),
-          ],
-        ),
-      ],
-    );
-  }
+          ),
+          Container(width: 24, height: 1, color: brandGreen.withOpacity(0.5)),
+        ],
+      ),
+    ],
+  );
+}
 }

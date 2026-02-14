@@ -143,82 +143,89 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
-
   Widget _buildPremiumLogo() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 🏎️ THE STACKED MECHANICAL EMBLEM
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Outer Ring
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: brandGreen.withOpacity(0.1), width: 1),
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // 🏎️ APP LOGO EMBLEM
+      Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer Ring
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: brandGreen.withOpacity(0.1),
+                width: 1,
               ),
             ),
-            // Inner Core
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.03),
-                boxShadow: [
-                  BoxShadow(
-                    color: brandGreen.withOpacity(0.1),
-                    blurRadius: 40,
-                    spreadRadius: 5,
-                  )
-                ],
-              ),
-            ),
-            // Technical Icons
-            Column(
-              children: [
-                const Icon(Icons.build_rounded, size: 40, color: brandGreen),
-                const SizedBox(height: 4),
-                const Icon(Icons.directions_car_filled_rounded, size: 24, color: Colors.white),
+          ),
+
+          // Inner Glow Core
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.03),
+              boxShadow: [
+                BoxShadow(
+                  color: brandGreen.withOpacity(0.2),
+                  blurRadius: 40,
+                  spreadRadius: 5,
+                )
               ],
             ),
-          ],
-        ),
-        const SizedBox(height: 32),
-        // Branded Text
-        const Text(
-          "SMART GARAGE",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 8, // Ultra-premium spacing
           ),
+
+          // 🔥 YOUR IMAGE LOGO (Animated automatically)
+          Image.asset(
+            'assets/logo/app_logo.png',
+            width: 70,
+            height: 70,
+            fit: BoxFit.contain,
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 32),
+
+      // Brand Text
+      const Text(
+        "SMART GARAGE",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 32,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 8,
         ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 30, height: 1, color: brandGreen),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "PRECISION HUB",
-                style: TextStyle(
-                  color: brandGreen,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 3,
-                ),
+      ),
+
+      const SizedBox(height: 12),
+
+      // Tagline
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 30, height: 1, color: brandGreen),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "PRECISION HUB",
+              style: TextStyle(
+                color: brandGreen,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 3,
               ),
             ),
-            Container(width: 30, height: 1, color: brandGreen),
-          ],
-        ),
-      ],
-    );
-  }
+          ),
+          Container(width: 30, height: 1, color: brandGreen),
+        ],
+      ),
+    ],
+  );
 }
