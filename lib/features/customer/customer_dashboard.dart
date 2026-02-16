@@ -313,26 +313,85 @@ AppBar _buildAppBar() {
       ),
     );
   }
+Widget _buildVehicleHero(Map data) {
+  final vehicle = data["primaryVehicle"];
 
-  Widget _buildVehicleHero(Map data) {
+  // 🧠 If no vehicle → show placeholder
+  if (vehicle == null) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(colors: [brandGreen.withOpacity(0.8), brandGreen.withOpacity(0.4)]),
+        color: surfaceDark,
+        border: Border.all(color: Colors.white10),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("PRIMARY VEHICLE", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(
+            "PRIMARY VEHICLE",
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           SizedBox(height: 8),
-          Text("Hyundai i20", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          Text("TS 09 EQ 1234", style: TextStyle(color: Colors.white70)),
+          Text(
+            "No vehicle added",
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
+
+  // ✅ Normal vehicle UI
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(24),
+      gradient: LinearGradient(
+        colors: [
+          brandGreen.withOpacity(0.8),
+          brandGreen.withOpacity(0.4),
+        ],
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "PRIMARY VEHICLE",
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          vehicle["model"] ?? "Vehicle",
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          vehicle["registrationNumber"] ?? "",
+          style: const TextStyle(color: Colors.white70),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildInsightGrid(Map data) {
     return GridView.count(

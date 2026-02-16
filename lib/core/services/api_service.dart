@@ -496,8 +496,9 @@ class ApiService {
       throw _handleError(response);
     }
   }
-static Future<List<int>> downloadInvoice(
-    int bookingId) async {
+  static Future<List<int>> downloadInvoice(
+  int bookingId,
+) async {
 
   final headers = await _authHeaders();
 
@@ -948,7 +949,22 @@ static Future<int> getUnreadNotificationCount() async {
   }
 }
 
+static Future<void> confirmPayment({
+  required int bookingId,
+}) async {
+  final headers = await _authHeaders();
 
+  final response = await http.post(
+    Uri.parse(
+      '${ApiConstants.payments}/confirm/$bookingId',
+    ),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
 
 
 }

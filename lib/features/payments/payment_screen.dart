@@ -69,18 +69,24 @@ await Stripe.instance.initPaymentSheet(
 );
 
       // STEP 3: PRESENT UI
-      await Stripe.instance.presentPaymentSheet();
+    await Stripe.instance.presentPaymentSheet();
 
-      if (!mounted) return;
+// 🔥 CONFIRM PAYMENT IN BACKEND
+await ApiService.confirmPayment(
+  bookingId: bookingId,
+);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: brandGreen,
-          content: Text("✅ Payment Confirmed. Receipt sent to your email."),
-        ),
-      );
+if (!mounted) return;
 
-      Navigator.pop(context, true);
+ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(
+    backgroundColor: brandGreen,
+    content: Text("✅ Payment Confirmed. Receipt sent to your email."),
+  ),
+);
+
+Navigator.pop(context, true);
+
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
