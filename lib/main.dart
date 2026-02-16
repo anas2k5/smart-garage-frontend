@@ -9,8 +9,10 @@ import 'features/auth/login_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔑 Stripe Configuration
-  Stripe.publishableKey = "pk_test_51SqA0WCFdVOc1RqKtPuGO3tGbPzkGgubwYl4xZlyA9yz6UptMJcn4RuPWuIk2T68AKGZYCylfibF5UsvpBiybvG900dD2XTe6S";
+  Stripe.publishableKey =
+      "pk_test_51SqA0WCFdVOc1RqKtPuGO3tGbPzkGgubwYl4xZlyA9yz6UptMJcn4RuPWuIk2T68AKGZYCylfibF5UsvpBiybvG900dD2XTe6S";
+
+  await Stripe.instance.applySettings();
 
   runApp(const SmartGarageApp());
 }
