@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_garage_app/core/services/api_service.dart';
 import 'package:smart_garage_app/models/garage.dart';
 import 'owner_garage_actions_screen.dart';
-
+import '../customer/presentation/free_map_screen.dart';
 class OwnerGaragesScreen extends StatefulWidget {
   const OwnerGaragesScreen({super.key});
 
@@ -32,58 +32,124 @@ class _OwnerGaragesScreenState extends State<OwnerGaragesScreen> {
 
   // ================= MODERN EDIT DIALOG =================
   void _editGarage(Garage g) {
-    final nameCtrl = TextEditingController(text: g.name);
-    final addressCtrl = TextEditingController(text: g.address);
-    final phoneCtrl = TextEditingController(text: g.phone);
+  final nameCtrl = TextEditingController(text: g.name);
+  final addressCtrl = TextEditingController(text: g.address);
+  final phoneCtrl = TextEditingController(text: g.phone);
 
-    showDialog(
-      context: context,
-      builder: (_) => Theme(
-        data: ThemeData.dark().copyWith(useMaterial3: true),
-        child: AlertDialog(
-          backgroundColor: surfaceDark,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text("Edit Garage Details", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildDialogField(nameCtrl, "Garage Name", Icons.storefront_rounded),
-                const SizedBox(height: 16),
-                _buildDialogField(addressCtrl, "Address", Icons.location_on_rounded),
-                const SizedBox(height: 16),
-                _buildDialogField(phoneCtrl, "Phone Number", Icons.phone_rounded, type: TextInputType.phone),
-              ],
+  double? selectedLat = g.latitude;
+  double? selectedLng = g.longitude;
+
+  showDialog(
+    context: context,
+    builder: (_) => StatefulBuilder(
+      builder: (context, setStateDialog) {
+        return Theme(
+          data: ThemeData.dark().copyWith(useMaterial3: true),
+          child: AlertDialog(
+            backgroundColor: surfaceDark,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24)),
+            title: const Text(
+              "Edit Garage Details",
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildDialogField(
+                      nameCtrl, "Garage Name", Icons.storefront_rounded),
+                  const SizedBox(height: 16),
+                  _buildDialogField(
+                      addressCtrl, "Address", Icons.location_on_rounded),
+                  const SizedBox(height: 16),
+                  _buildDialogField(
+                      phoneCtrl, "Phone Number", Icons.phone_rounded,
+                      type: TextInputType.phone),
+                  const SizedBox(height: 20),
+
+                  // ✅ LOCATION PICKER BUTTON (NEW)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: brandGreen,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FreeMapScreen(),
+                        ),
+                      );
+
+                      if (result != null) {
+                        final parts = result.split(",");
+                        setStateDialog(() {
+                          selectedLat =
+                              double.parse(parts[0].trim());
+                          selectedLng =
+                              double.parse(parts[1].trim());
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.map_rounded),
+                    label: const Text("Pick Garage Location"),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ✅ SHOW SELECTED COORDINATES
+                  if (selectedLat != null && selectedLng != null)
+                    Text(
+                      "Lat: ${selectedLat!.toStringAsFixed(4)}, "
+                      "Lng: ${selectedLng!.toStringAsFixed(4)}",
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.white54),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel",
+                    style: TextStyle(color: Colors.white38)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: brandGreen,
+                    foregroundColor: Colors.white),
+                onPressed: () async {
+                  await ApiService.updateGarage(
+                    garageId: g.id,
+                    name: nameCtrl.text.trim(),
+                    address: addressCtrl.text.trim(),
+                    phone: phoneCtrl.text.trim(),
+                    latitude: selectedLat,
+                    longitude: selectedLng,
+                  );
+
+                  if (!mounted) return;
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: brandGreen,
+                      content: Text("✅ Garage updated successfully"),
+                    ),
+                  );
+
+                  _loadGarages();
+                },
+                child: const Text("Save Changes"),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white38)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: brandGreen, foregroundColor: Colors.white),
-              onPressed: () async {
-                await ApiService.updateGarage(
-                  garageId: g.id,
-                  name: nameCtrl.text.trim(),
-                  address: addressCtrl.text.trim(),
-                  phone: phoneCtrl.text.trim(),
-                );
-                if (!mounted) return;
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(backgroundColor: brandGreen, content: Text("✅ Garage updated successfully")),
-                );
-                _loadGarages();
-              },
-              child: const Text("Save Changes"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildDialogField(TextEditingController ctrl, String label, IconData icon, {TextInputType type = TextInputType.text}) {
     return TextField(

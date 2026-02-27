@@ -784,6 +784,8 @@ static Future<void> updateGarage({
   required String name,
   required String address,
   required String phone,
+  double? latitude,
+  double? longitude,
 }) async {
   final headers = await _authHeaders();
 
@@ -794,6 +796,8 @@ static Future<void> updateGarage({
       "name": name,
       "address": address,
       "phone": phone,
+      "latitude": latitude,
+      "longitude": longitude,
     }),
   );
 
