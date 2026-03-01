@@ -997,5 +997,25 @@ static Future<Map<String, int>> getSlotAvailability({
     throw _handleError(response);
   }
 }
+static Future<void> updateSlotCapacity({
+  required int garageId,
+  required int maxBookingsPerSlot,
+}) async {
+  final headers = await _authHeaders();
+
+  final response = await http.put(
+    Uri.parse(
+      '${ApiConstants.garages}/$garageId/slot-capacity',
+    ),
+    headers: headers,
+    body: jsonEncode({
+      "maxBookingsPerSlot": maxBookingsPerSlot,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw _handleError(response);
+  }
+}
 
 }

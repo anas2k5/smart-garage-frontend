@@ -6,6 +6,7 @@ class Garage {
   final String address;
   final String phone;
   final bool active;
+  final int maxBookingsPerSlot;
 
   // ✅ NEW (safe additions)
   final double? latitude;
@@ -17,6 +18,7 @@ class Garage {
     required this.address,
     required this.phone,
     required this.active,
+      required this.maxBookingsPerSlot,
     this.latitude,
     this.longitude,
   });
@@ -34,6 +36,7 @@ class Garage {
       address: json['address'] ?? '',
       phone: json['phone'] ?? '',
       active: json['active'] ?? true,
+        maxBookingsPerSlot: json['maxBookingsPerSlot'] ?? 3,
 
       // ✅ Parse coordinates (SAFE)
       latitude: json['latitude'] != null
