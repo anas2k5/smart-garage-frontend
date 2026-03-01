@@ -969,6 +969,33 @@ static Future<void> confirmPayment({
     throw _handleError(response);
   }
 }
+static Future<Map<String, int>> getSlotAvailability({
+  required int garageId,
+  required DateTime date,
+}) async {
+  final headers = await _authHeaders();
 
+  final formattedDate =
+      "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+
+  final response = await http.get(
+    Uri.parse(
+      '${ApiConstants.bookings}/garage/$garageId/slots?date=$formattedDate',
+    ),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    final Map<String, dynamic> data =
+        jsonDecode(response.body);
+
+    return data.map(
+      (key, value) =>
+          MapEntry(key, (value as num).toInt()),
+    );
+  } else {
+    throw _handleError(response);
+  }
+}
 
 }

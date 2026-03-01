@@ -171,6 +171,25 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                         Text(booking.serviceTypeSafe, style: const TextStyle(color: Colors.white54, fontSize: 13)),
                       ],
                     ),
+                    const SizedBox(height: 6),
+Row(
+  children: [
+    const Icon(
+      Icons.schedule,
+      size: 14,
+      color: Colors.white38,
+    ),
+    const SizedBox(width: 6),
+    Text(
+      booking.bookingTimeFormatted,
+      style: const TextStyle(
+        color: Colors.white38,
+        fontSize: 12,
+      ),
+    ),
+  ],
+),
+                    
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(height: 1, color: Colors.white10),

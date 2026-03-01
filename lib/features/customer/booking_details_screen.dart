@@ -82,7 +82,7 @@ class BookingDetailsScreen extends StatelessWidget {
                 content: [
                   _infoRow("Vehicle Plate", booking.vehiclePlateSafe),
                   _infoRow("Service Type", booking.serviceTypeSafe),
-                  _infoRow("Booking Date", booking.bookingTimeFormatted),
+                 _infoRow("Scheduled At", booking.bookingTimeFormatted),
                 ],
               ),
               const SizedBox(height: 16),
